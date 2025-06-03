@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build",
-    "test": "jest"
+    "test": "vitest"
   },
   "peerDependencies": {
     "slonik": "^35.2.1",
@@ -15,7 +15,11 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.4",
-    "typescript": "^5.8.3"
+    "pg": "^8.16.0",
+    "prettier": "^3.5.3",
+    "testcontainers": "^11.0.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.0"
   },
   "keywords": [
     "postgresql",
@@ -25,5 +29,11 @@
     "type-safe",
     "sql",
     "orm"
-  ]
+  ],
+  "dependencies": {
+    "extract-pg-schema": "^5.7.1"
+  },
+  "engines": {
+    "node": ">=23.0.0"
+  }
 }
