@@ -1,14 +1,14 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "Node",
-    "types": ["vitest/globals"],
+    "moduleResolution": "Bundler",
+    "types": ["node"],
     "esModuleInterop": true,
     "skipLibCheck": true,
     "strict": true,
     "outDir": "dist",
     "declaration": true
   },
-  "include": ["src", "tests"]
+  "include": ["src"]
 }
