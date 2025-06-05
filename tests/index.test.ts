@@ -3,6 +3,7 @@ import fs from "fs/promises";
 import { GenericContainer, StartedTestContainer } from "testcontainers";
 import { Client } from "pg";
 import { extractSchemas } from "extract-pg-schema";
+import { execa } from "execa";
 
 describe("no-orm", () => {
   let container: StartedTestContainer;
@@ -22,6 +23,7 @@ describe("no-orm", () => {
 
     const port = container.getMappedPort(5432);
     const host = container.getHost();
+    // STARTHERE: Host and port are dynamic. I need to pass this into the `configSchema` somehow.
     connectionString = `postgres://postgres:postgres@${host}:${port}/postgres`;
 
     client = new Client({
@@ -36,24 +38,32 @@ describe("no-orm", () => {
   });
 
   const TESTS_DIR = path.join(__dirname);
-  const testCases: { name: string; schemaPath: string }[] = [
+  type TestCase = { name: string; directory: string };
+  const testCases: TestCase[] = [
     {
       name: "test-docs-hero-example",
-      schemaPath: path.join(TESTS_DIR, "test-docs-hero-example", "schema.sql"),
+      directory: path.join(TESTS_DIR, "test-docs-hero-example"),
     },
   ];
 
   /** Tests all cases described by the `test-*` prefix.  */
   test.each(testCases)("extracts schema for $name", async (testCase) => {
-    const schemaSql = await fs.readFile(testCase.schemaPath, "utf8");
+    const schemaPath = path.join(testCase.directory, "schema.sql");
+    const schemaSql = await fs.readFile(schemaPath, "utf8");
     await client.query(schemaSql);
 
-    const result = await extractSchemas({
-      connectionString,
-    });
+    const configPath = path.join(testCase.directory, "no-orm.config.ts");
+    const cliPath = path.resolve(__dirname, "../src/index.ts");
 
-    console.log(`\n--- Output for ${testCase.name} ---`);
-    console.dir(result, { depth: null });
+    const result = await execa("npx", [
+      "tsx",
+      cliPath,
+      "--config-path",
+      configPath,
+    ]);
+    console.log(result.stdout);
+    console.log(result.stderr);
+    expect(result.exitCode).toBe(0);
 
     // Drop tables for next test.
     await client.query(`
