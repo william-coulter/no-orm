@@ -1,5 +1,6 @@
 import { noOrmConfigSchema } from "../../src/no-orm.config";
 
 export default noOrmConfigSchema.parse({
-  database_url: "postgres://postgres:postgres@localhost:5432/postgres",
+  // For testing, the Postgres container host is dynamic.
+  database_url: process.env.DATABASE_URL,
 });

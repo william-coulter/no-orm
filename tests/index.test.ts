@@ -5,6 +5,7 @@ import { Client } from "pg";
 import { extractSchemas } from "extract-pg-schema";
 import { execa } from "execa";
 
+// TODO: Why are you complaining?
 describe("no-orm", () => {
   let container: StartedTestContainer;
   let client: Client;
@@ -23,7 +24,6 @@ describe("no-orm", () => {
 
     const port = container.getMappedPort(5432);
     const host = container.getHost();
-    // STARTHERE: Host and port are dynamic. I need to pass this into the `configSchema` somehow.
     connectionString = `postgres://postgres:postgres@${host}:${port}/postgres`;
 
     client = new Client({
@@ -55,12 +55,16 @@ describe("no-orm", () => {
     const configPath = path.join(testCase.directory, "no-orm.config.ts");
     const cliPath = path.resolve(__dirname, "../src/index.ts");
 
-    const result = await execa("npx", [
-      "tsx",
-      cliPath,
-      "--config-path",
-      configPath,
-    ]);
+    const result = await execa(
+      "npx",
+      ["tsx", cliPath, "--config-path", configPath],
+      {
+        env: {
+          ...process.env,
+          DATABASE_URL: connectionString,
+        },
+      },
+    );
     console.log(result.stdout);
     console.log(result.stderr);
     expect(result.exitCode).toBe(0);

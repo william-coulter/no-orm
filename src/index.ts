@@ -28,7 +28,11 @@ async function run({ configPath }: RunArgs) {
       connectionString: config.database_url,
     });
 
-    console.log(result);
+    console.log(
+      result.public.tables.map((t) =>
+        console.log("found table!", JSON.stringify(t, null, 2)),
+      ),
+    );
   } catch (err) {
     console.error("Error:", err);
     process.exit(1);
