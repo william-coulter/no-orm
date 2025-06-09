@@ -25,7 +25,7 @@ async function run({ configPath }: RunArgs) {
     );
 
     const result = await extractSchemas({
-      connectionString: config.database_url,
+      connectionString: config.postgres_connection_string,
     });
 
     console.log(

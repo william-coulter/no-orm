@@ -61,7 +61,7 @@ describe("no-orm", () => {
       {
         env: {
           ...process.env,
-          DATABASE_URL: connectionString,
+          POSTGRES_CONNECTION_STRING: connectionString,
         },
       },
     );
