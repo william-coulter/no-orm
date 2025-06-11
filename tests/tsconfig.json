@@ -1,0 +1,5 @@
+// A hack so that VSCode stops complaining about compiling errors in tests.
+{
+  "extends": "../tsconfig.test.json",
+  "include": ["."]
+}

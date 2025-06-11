@@ -2,17 +2,14 @@ import path from "path";
 import fs from "fs/promises";
 import { GenericContainer, StartedTestContainer } from "testcontainers";
 import { Client } from "pg";
-import { extractSchemas } from "extract-pg-schema";
 import { execa } from "execa";
 
-// TODO: Why are you complaining?
 describe("no-orm", () => {
   let container: StartedTestContainer;
   let client: Client;
   let connectionString: string;
 
   beforeAll(async () => {
-    // Start Postgres container
     container = await new GenericContainer("postgres:17")
       .withExposedPorts(5432)
       .withEnvironment({
@@ -68,6 +65,8 @@ describe("no-orm", () => {
     console.log(result.stdout);
     console.log(result.stderr);
     expect(result.exitCode).toBe(0);
+
+    // STARTHERE: Assert that the output file is the same as the `table.ts`.
 
     // Drop tables for next test.
     await client.query(`
