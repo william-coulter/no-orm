@@ -38,7 +38,7 @@ describe("no-orm", () => {
   type TestCase = { name: string; directory: string };
   const testCases: TestCase[] = [
     {
-      name: "test-docs-hero-example",
+      name: "Example from the docs (hero section)",
       directory: path.join(TESTS_DIR, "test-docs-hero-example"),
     },
   ];
@@ -51,6 +51,10 @@ describe("no-orm", () => {
 
     const configPath = path.join(testCase.directory, "no-orm.config.ts");
     const cliPath = path.resolve(__dirname, "../src/index.ts");
+    const testOutputDir = path.join(testCase.directory, "test-outputs");
+
+    // First remove any previous test outputs.
+    await fs.rm(testOutputDir, { recursive: true, force: true });
 
     const result = await execa(
       "npx",
@@ -59,14 +63,27 @@ describe("no-orm", () => {
         env: {
           ...process.env,
           POSTGRES_CONNECTION_STRING: connectionString,
+          OUTPUT_DIRECTORY: testOutputDir,
         },
       },
     );
-    console.log(result.stdout);
-    console.log(result.stderr);
     expect(result.exitCode).toBe(0);
 
-    // STARTHERE: Assert that the output file is the same as the `table.ts`.
+    // For every file in `expected`, let's assert the same file exists in `test-outputs` and that it matches.
+    const expectedPath = path.join(testCase.directory, "expected");
+    const expectedFilePaths = await getAllRelativeFilePaths(expectedPath);
+
+    for (const relativePath of expectedFilePaths) {
+      const expectedFile = path.join(expectedPath, relativePath);
+      const actualFile = path.join(testOutputDir, relativePath);
+
+      const [expectedContents, actualContents] = await Promise.all([
+        safeReadFile(expectedFile, "utf8"),
+        safeReadFile(actualFile, "utf8"),
+      ]);
+
+      expect(actualContents).toBe(expectedContents);
+    }
 
     // Drop tables for next test.
     await client.query(`
@@ -83,3 +100,45 @@ describe("no-orm", () => {
     `);
   });
 });
+
+/* Recursively walks a directory and return all file paths relative to `baseDir`. */
+async function getAllRelativeFilePaths(
+  baseDir: string,
+  dir: string = "",
+): Promise<string[]> {
+  const fullDirPath = path.join(baseDir, dir);
+  const entries = await fs.readdir(fullDirPath);
+
+  const files: string[] = [];
+
+  for (const entry of entries) {
+    const fullPath = path.join(fullDirPath, entry);
+    const relPath = path.join(dir, entry);
+    const entryStat = await fs.stat(fullPath);
+
+    if (entryStat.isDirectory()) {
+      const subFiles = await getAllRelativeFilePaths(baseDir, relPath);
+      files.push(...subFiles);
+    } else {
+      files.push(relPath);
+    }
+  }
+
+  return files;
+}
+
+type SafeReadArgs = Parameters<typeof fs.readFile>;
+
+/** Attempts to read a file and returns `null` if it doesn't exist. */
+async function safeReadFile(
+  ...args: SafeReadArgs
+): Promise<string | Buffer<ArrayBufferLike> | null> {
+  try {
+    return await fs.readFile(...args);
+  } catch (err: any) {
+    if (err.code === "ENOENT") {
+      return null;
+    }
+    throw err;
+  }
+}

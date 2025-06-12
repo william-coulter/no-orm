@@ -4,5 +4,5 @@
     "outDir": ".test-dist",
     "types": ["vitest/globals"]
   },
-  "include": ["tests"]
+  "include": ["src", "tests"]
 }
