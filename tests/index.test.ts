@@ -67,7 +67,7 @@ describe("no-orm", () => {
         },
       },
     );
-    expect(result.exitCode).toBe(0);
+    expect(result.exitCode).toEqual(0);
 
     // For every file in `expected`, let's assert the same file exists in `test-outputs` and that it matches.
     const expectedPath = path.join(testCase.directory, "expected");
@@ -82,7 +82,7 @@ describe("no-orm", () => {
         safeReadFile(actualFile, "utf8"),
       ]);
 
-      expect(actualContents).toBe(expectedContents);
+      expect(expectedContents).toEqual(actualContents);
     }
 
     // Drop tables for next test.

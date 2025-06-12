@@ -49,7 +49,9 @@ async function run({ configPath }: RunArgs) {
           recursive: true,
         });
 
-        const tableFileContent = await TableBuilder.build({});
+        const tableFileContent = await TableBuilder.build({
+          table,
+        });
 
         await writeFile(
           path.join(outputPath, "table.ts"),
