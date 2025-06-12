@@ -5,7 +5,7 @@ import {
   row,
   type Row,
   tableFragment,
-} from "./table";
+} from "./expected/public/penguins/table";
 
 type BaseArgs = { connection: CommonQueryMethods };
 
