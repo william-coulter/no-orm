@@ -22,7 +22,6 @@
     "@types/pg": "^8.15.4",
     "execa": "^9.6.0",
     "pg": "^8.16.0",
-    "prettier": "^3.5.3",
     "testcontainers": "^11.0.0",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",
@@ -38,7 +37,8 @@
     "orm"
   ],
   "dependencies": {
-    "extract-pg-schema": "^5.7.1"
+    "extract-pg-schema": "^5.7.1",
+    "prettier": "^3.5.3"
   },
   "engines": {
     "node": ">=23.0.0"
