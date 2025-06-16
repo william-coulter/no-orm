@@ -5,6 +5,7 @@ type BuildArgs = {
 };
 
 export async function build({ table }: BuildArgs): Promise<string> {
+  // TODO: Also include any user-supplied readOnly, or delete columns.
   const createColumns: TableColumn[] = getCreateColumns({ table });
 
   return `${buildImports()}
