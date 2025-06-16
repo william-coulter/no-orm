@@ -39,3 +39,37 @@ export async function createMany({
 
   return connection.any(query);
 }
+
+export type CreateArgs = BaseArgs & {
+  shape: Create;
+};
+
+export async function create({ connection, shape }: CreateArgs): Promise<Row> {
+  const result = await createMany({ connection, shapes: [shape] });
+  return result[0];
+}
+
+export type GetManyArgs = BaseArgs & {
+  ids: number[];
+};
+
+export async function getMany({
+  connection,
+  ids,
+}: GetManyArgs): Promise<readonly Row[]> {
+  const query = sql.type(row)`
+    SELECT ${columnsFragment}
+    FROM ${tableFragment}
+    WHERE id = ANY(${sql.array(ids, "INT")})`;
+
+  return connection.any(query);
+}
+
+type GetArgs = BaseArgs & {
+  id: Id;
+};
+
+export async function get({ connection, id }: GetArgs): Promise<Row> {
+  const result = await getMany({ connection, ids: [id] });
+  return result[0];
+}
