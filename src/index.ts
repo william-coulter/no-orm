@@ -4,7 +4,7 @@ const { extractSchemas } = await import("extract-pg-schema");
 import path from "path";
 import { mkdir, writeFile } from "fs/promises";
 import { Command } from "commander";
-import { TableDetails } from "extract-pg-schema";
+import { format, resolveConfig, type Options } from "prettier";
 
 import { noOrmConfigSchema } from "./no-orm.config";
 import * as TableBuilder from "./builders/table.builder";
@@ -28,6 +28,8 @@ async function run({ configPath }: RunArgs) {
     const config = noOrmConfigSchema.parse(
       configModule.default ?? configModule,
     );
+    // TODO: Make me a config argument.
+    const prettierConfig = await resolveConfig(".prettierrc");
 
     const result = await extractSchemas({
       connectionString: config.postgres_connection_string,
@@ -53,26 +55,33 @@ async function run({ configPath }: RunArgs) {
           table,
         });
 
+        const formattedTableFileContent = await prettierFormat(
+          tableFileContent,
+          prettierConfig,
+        );
+
         await writeFile(
           path.join(outputPath, "table.ts"),
-          tableFileContent,
+          formattedTableFileContent,
           "utf-8",
         );
 
-        const modelFileContent = await ModelBuilder.build({});
+        const modelFileContent = await ModelBuilder.build({
+          table,
+        });
+
+        const formattedModelFileContent = await prettierFormat(
+          modelFileContent,
+          prettierConfig,
+        );
 
         await writeFile(
           path.join(outputPath, "model.ts"),
-          modelFileContent,
+          formattedModelFileContent,
           "utf-8",
         );
       }
     }
-
-    // For each schema.
-    // For each table.
-    //  1. Create `table.ts`.
-    //  2. Create `model.ts`.
   } catch (err) {
     // TODO: On error, ensure any changes made to the `no-orm` directory are left untouched.
     // Basically make sure generating your files is atomic.
@@ -86,3 +95,11 @@ type RunArgs = {
 };
 
 run({ configPath: options.configPath });
+
+/** Will format the file according to the prettier config. */
+async function prettierFormat(
+  code: string,
+  config: Options | null,
+): Promise<string> {
+  return format(code, { parser: "typescript", config });
+}
