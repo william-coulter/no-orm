@@ -67,3 +67,44 @@ export async function get({ connection, id }: GetArgs): Promise<Row> {
   const result = await getMany({ connection, ids: [id] });
   return result[0];
 }
+
+type Update = Row;
+
+export type UpdateManyArgs = BaseArgs & {
+  newRows: Update[];
+};
+
+export function updateMany({
+  connection,
+  newRows,
+}: UpdateManyArgs): Promise<readonly Row[]> {
+  const ids = newRows.map((row) => row.id);
+  const names = newRows.map((row) => row.name);
+  const species = newRows.map((row) => row.species);
+  const waddleSpeeds = newRows.map((row) => row.waddle_speed_kph);
+
+  const query = sql.type(row)`
+    UPDATE ${tableFragment} AS t SET
+      name = u.name,
+      species = u.species,
+      waddle_speed_kph = u.waddle_speed_kph
+    FROM (
+      SELECT ${columnsFragment} FROM ${sql.unnest(
+        [ids, names, species, waddleSpeeds],
+        ["int", "text", "text", "numeric"],
+      )}
+    ) AS u(id, name, species, waddle_speed_kph)
+    WHERE t.id = u.id
+    RETURNING ${columnsFragment}`;
+
+  return connection.any(query);
+}
+
+type UpdateArgs = BaseArgs & {
+  newRow: Update;
+};
+
+export async function update({ connection, newRow }: UpdateArgs): Promise<Row> {
+  const result = await updateMany({ connection, newRows: [newRow] });
+  return result[0];
+}
