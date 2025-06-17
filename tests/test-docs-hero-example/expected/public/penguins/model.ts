@@ -40,18 +40,14 @@ export async function createMany({
   return connection.any(query);
 }
 
-export type CreateArgs = BaseArgs & {
-  shape: Create;
-};
+export type CreateArgs = BaseArgs & { shape: Create };
 
 export async function create({ connection, shape }: CreateArgs): Promise<Row> {
   const result = await createMany({ connection, shapes: [shape] });
   return result[0];
 }
 
-export type GetManyArgs = BaseArgs & {
-  ids: number[];
-};
+export type GetManyArgs = BaseArgs & { ids: Id[] };
 
 export async function getMany({
   connection,
@@ -60,14 +56,12 @@ export async function getMany({
   const query = sql.type(row)`
     SELECT ${columnsFragment}
     FROM ${tableFragment}
-    WHERE id = ANY(${sql.array(ids, "INT")})`;
+    WHERE id = ANY(${sql.array(ids, "int")})`;
 
   return connection.any(query);
 }
 
-type GetArgs = BaseArgs & {
-  id: Id;
-};
+type GetArgs = BaseArgs & { id: Id };
 
 export async function get({ connection, id }: GetArgs): Promise<Row> {
   const result = await getMany({ connection, ids: [id] });

@@ -17,6 +17,18 @@ ${buildCreateType({ columns: createColumns })}
 ${buildCreateManyArgsType()}
 
 ${buildCreateManyFunction({ columns: createColumns })}
+
+${buildCreateArgsType()}
+
+${buildCreateFunction()}
+
+${buildGetManyArgsType()}
+
+${buildGetManyFunction({ table })}
+
+${buildGetArgsType()}
+
+${buildGetFunction()}
 `;
 }
 
@@ -95,6 +107,56 @@ ${shapes}
 }`;
 }
 
+/** Builds the `CreateArgs` type. */
+function buildCreateArgsType(): string {
+  return `export type CreateArgs = BaseArgs & { shape: Create };`;
+}
+
+/** Builds the `create` function. */
+function buildCreateFunction(): string {
+  return `export async function create({ connection, shape }: CreateArgs): Promise<Row> {
+  const result = await createMany({ connection, shapes: [shape] });
+  return result[0];
+}`;
+}
+
+/** Builds the `GetManyArgs` type. */
+function buildGetManyArgsType(): string {
+  return `export type GetManyArgs = BaseArgs & { ids: Id[] };`;
+}
+
+function buildGetManyFunction({ table }: { table: TableDetails }): string {
+  const primaryKey = table.columns.find((col) => col.isPrimaryKey);
+  if (!primaryKey) {
+    throw new NoPrimaryKeyError(table);
+  }
+
+  const sqlType = mapPgTypeToUnnest(primaryKey.type.fullName);
+
+  return `export async function getMany({
+  connection,
+  ids,
+}: GetManyArgs): Promise<readonly Row[]> {
+  const query = sql.type(row)\`
+    SELECT \${columnsFragment}
+    FROM \${tableFragment}
+    WHERE ${primaryKey.name} = ANY(\${sql.array(ids, "${sqlType}")})\`;
+
+  return connection.any(query);
+}`;
+}
+
+function buildGetArgsType(): string {
+  return `type GetArgs = BaseArgs & { id: Id };`;
+}
+
+function buildGetFunction(): string {
+  return `export async function get({ connection, id }: GetArgs): Promise<Row> {
+  const result = await getMany({ connection, ids: [id] });
+  return result[0];
+}`;
+}
+
 /** Converts PG types to TypeScript types. */
 function mapColumnBaseTypeToTypescriptType(fullName: string): string {
   switch (fullName) {
@@ -121,12 +183,13 @@ function mapColumnBaseTypeToTypescriptType(fullName: string): string {
 }
 
 /** Converts PG types to SQL unnest types. */
+// TODO: I think this will need a refactor. Can I just strip the section that isn't `pg_catalog`?
 function mapPgTypeToUnnest(fullName: string): string {
   switch (fullName) {
     case "pg_catalog.int2":
     case "pg_catalog.int4":
     case "pg_catalog.int8":
-      return "int4";
+      return "int";
     case "pg_catalog.float4":
     case "pg_catalog.float8":
     case "pg_catalog.numeric":
@@ -146,5 +209,11 @@ function mapPgTypeToUnnest(fullName: string): string {
       return "timestamp";
     default:
       return "text";
+  }
+}
+
+class NoPrimaryKeyError extends Error {
+  constructor(table: TableDetails) {
+    super(`Table ${table.name} has no primary key`);
   }
 }
