@@ -5,8 +5,11 @@ type BuildArgs = {
 };
 
 export async function build({ table }: BuildArgs): Promise<string> {
-  // TODO: Also include any user-supplied readOnly, or delete columns.
+  // TODO: Also include any user-supplied readOnly, or omitted columns.
   const createColumns: TableColumn[] = getCreateColumns({ table });
+
+  // TODO: Also include any user-supplied readOnly, or omitted columns.
+  const updatableColumns: TableColumn[] = getUpdatableColumns({ table });
 
   return `${buildImports()}
 
@@ -29,11 +32,30 @@ ${buildGetManyFunction({ table })}
 ${buildGetArgsType()}
 
 ${buildGetFunction()}
+
+${buildUpdateType({ updatableColumns })}
+
+${buildUpdateManyArgsType()}
+
+${buildUpdateManyFunction({ table, updatableColumns })}
+
+${buildUpdateArgsType()}
+
+${buildUpdateFunction()}
 `;
 }
 
 /** Returns columns that are required to create a row in this table. */
 function getCreateColumns({ table }: { table: TableDetails }): TableColumn[] {
+  return table.columns.filter((col) => !col.isPrimaryKey);
+}
+
+/** Returns columns that are required to update a row in this table. */
+function getUpdatableColumns({
+  table,
+}: {
+  table: TableDetails;
+}): TableColumn[] {
   return table.columns.filter((col) => !col.isPrimaryKey);
 }
 
@@ -153,6 +175,88 @@ function buildGetArgsType(): string {
 function buildGetFunction(): string {
   return `export async function get({ connection, id }: GetArgs): Promise<Row> {
   const result = await getMany({ connection, ids: [id] });
+  return result[0];
+}`;
+}
+
+/** Builds the `Update` type. */
+function buildUpdateType({
+  updatableColumns,
+}: {
+  updatableColumns: TableColumn[];
+}): string {
+  return `type Update = Row;`;
+}
+
+/** Builds the `UpdateManyArgs` type. */
+function buildUpdateManyArgsType(): string {
+  return `export type UpdateManyArgs = BaseArgs & { newRows: Update[] };`;
+}
+
+/** Builds the `updateMany` function. */
+function buildUpdateManyFunction({
+  table,
+  updatableColumns,
+}: {
+  table: TableDetails;
+  updatableColumns: TableColumn[];
+}): string {
+  const primaryKey = table.columns.find((col) => col.isPrimaryKey);
+  if (!primaryKey) throw new NoPrimaryKeyError(table);
+
+  const primaryKeyVariable = `const ${primaryKey.name}s = newRows.map((row) => row.${primaryKey.name})`;
+  const updatableVariables = updatableColumns
+    .map(
+      (c) => `const ${c.name}_updates = newRows.map((row) => row.${c.name});`,
+    )
+    .join("\n");
+
+  const columnUpdate = updatableColumns
+    .map((c) => `${c.name} = u.${c.name}`)
+    .join(",\n      ");
+
+  const unnestPrimaryKey = `${primaryKey.name}s`;
+  const unnestUpdatableVariables = updatableColumns.map(
+    (c) => `${c.name}_updates`,
+  );
+  const unnestTypes = table.columns.map(
+    (col) => `"${mapPgTypeToUnnest(col.type.fullName)}"`,
+  );
+
+  const aliasColumns = table.columns.map((col) => col.name).join(", ");
+
+  return `export function updateMany({
+  connection,
+  newRows,
+}: UpdateManyArgs): Promise<readonly Row[]> {
+  ${primaryKeyVariable}
+  ${updatableVariables}
+
+  const query = sql.type(row)\`
+    UPDATE \${tableFragment} AS t SET
+      ${columnUpdate}
+    FROM (
+      SELECT \${columnsFragment} FROM \${sql.unnest(
+        [${[unnestPrimaryKey, ...unnestUpdatableVariables].join(", ")}],
+        [${unnestTypes}],
+      )}
+    ) AS u(${aliasColumns})
+    WHERE t.${primaryKey.name} = u.${primaryKey.name}
+    RETURNING \${columnsFragment}\`;
+
+  return connection.any(query);
+}`;
+}
+
+/** Builds the `UpdateArgs` type. */
+function buildUpdateArgsType(): string {
+  return `type UpdateArgs = BaseArgs & { newRow: Update };`;
+}
+
+/** Builds the `update` function. */
+function buildUpdateFunction(): string {
+  return `export async function update({ connection, newRow }: UpdateArgs): Promise<Row> {
+  const result = await updateMany({ connection, newRows: [newRow] });
   return result[0];
 }`;
 }
