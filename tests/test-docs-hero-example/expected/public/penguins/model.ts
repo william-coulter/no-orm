@@ -120,6 +120,8 @@ export async function deleteMany({
 
 type DeleteArgs = BaseArgs & { id: Id };
 
-export async function deleteOne({ connection, id }: DeleteArgs): Promise<void> {
+async function _delete({ connection, id }: DeleteArgs): Promise<void> {
   await deleteMany({ connection, ids: [id] });
 }
+
+export { _delete as delete };

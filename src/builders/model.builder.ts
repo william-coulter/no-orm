@@ -49,7 +49,7 @@ ${buildDeleteManyFunction({ table })}
 
 ${buildDeleteArgsType()}
 
-${buildDeleteOneFunction()}
+${buildDeleteFunction()}
 `;
 }
 
@@ -292,11 +292,13 @@ function buildDeleteArgsType(): string {
   return `type DeleteArgs = BaseArgs & { id: Id };`;
 }
 
-/** Builds the `deleteOne` function. */
-function buildDeleteOneFunction(): string {
-  return `export async function deleteOne({ connection, id }: DeleteArgs): Promise<void> {
+/** Builds the `delete` function and its alias export. */
+function buildDeleteFunction(): string {
+  return `async function _delete({ connection, id }: DeleteArgs): Promise<void> {
   await deleteMany({ connection, ids: [id] });
-}`;
+}
+
+export { _delete as delete };`;
 }
 
 /** Converts PG types to TypeScript types. */
