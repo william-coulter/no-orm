@@ -20,13 +20,13 @@ We recognise however that ORMs do have their benefits when writing and maintaini
 
 1. Database schemas written by ORMs suck.
 
-It's not their fault. They abstract over what is already a beautiful tool for defining schemas which means they miss out on the 
+It's not their fault. They abstract over what is already a beautiful tool for defining schemas which means they miss out on the
 
-Working with ORMs such as [Active Record](https://guides.rubyonrails.org/active_record_migrations.html) or [TypeORM](https://typeorm.io/migrations), we find ourselves wanting more. 
+Working with ORMs such as [Active Record](https://guides.rubyonrails.org/active_record_migrations.html) or [TypeORM](https://typeorm.io/migrations), we find ourselves wanting more.
 
-_"How can I define a Postgres enum type?"_ 
-_"How can I enforce data integrity with a deferred constraint trigger?"_ 
-_"STARTHERE: Another one."_
+_"How can I define a Postgres enum type?"_
+_"How can I enforce data integrity with a deferred constraint trigger?"_
+_"TODO: Another one."_
 
 2. N + 1 query problems everywhere.
 
@@ -36,10 +36,7 @@ While ORMs encourage simple query patterns, this also means they encourage round
 
 3. It's harder (or sometimes impossible) to use PostgreSQL's amazing features.
 
-
 4. Portability is not an advantage.
-
-
 
 # So what are the best bits of an ORM?
 
@@ -57,7 +54,7 @@ const sql = `
 ```
 
 ```typescript
-// My query has so many parameters embed in a plain string! 
+// My query has so many parameters embed in a plain string!
 // I hope I don't make a mistake!
 const sql = `
     INSERT INTO table_with_many_columns (
@@ -98,13 +95,13 @@ The fact that an ORM gives me some representation of a row of this table in my c
 
 ```typescript
 type Penguin = {
-    id: number,
-    name: string,
-    can_fly: boolean,
-    lives_in: Location,
-}
+  id: number;
+  name: string;
+  can_fly: boolean;
+  lives_in: Location;
+};
 
-const localPenguins: Penguin[] = Penguin.where({ lives_in: "my_home" })
+const localPenguins: Penguin[] = Penguin.where({ lives_in: "my_home" });
 // Returns `[]`.
 ```
 
@@ -119,10 +116,10 @@ const sql = `
     JOIN table_2 alias_2 ON alias_2.id = alias_1.id
     LEFT JOIN table_3 alias_3 ON alias_3.id = alias_2.id
     WHERE table_3.id IS NOT NULL
-      AND table_1.col_1 = 'something'`
+      AND table_1.col_1 = 'something'`;
 ```
 
-Understanding the data that comes back from this query is incredibly difficult. Not only that, but even a well-indexed query like this is not performant. The Postgres database is happiest when it processes simple queries. Even a few `JOIN`s with a `WHERE` clause can cause the query planner to get things wrong and blow up your query execution time. Even though we don't like ORMs, we also don't like complicated SQL queries. 
+Understanding the data that comes back from this query is incredibly difficult. Not only that, but even a well-indexed query like this is not performant. The Postgres database is happiest when it processes simple queries. Even a few `JOIN`s with a `WHERE` clause can cause the query planner to get things wrong and blow up your query execution time. Even though we don't like ORMs, we also don't like complicated SQL queries.
 
 Note that this isn't an explicit benefit of using an ORM however ORMs encourage the developer to perform simple queries.
 
@@ -142,9 +139,9 @@ With a traditional ORM, you start by writing application code and the ORM will c
 
 This reddit discussion is pretty good: https://www.reddit.com/r/AskProgramming/comments/1gaw39x/why_would_you_ever_use_an_orm/?rdt=34875
 
- - Portability.
- - Query building (just do server side joins). Built queries are often inefficient.
- - 
+- Portability.
+- Query building (just do server side joins). Built queries are often inefficient.
+-
 
 Our problem with ORM abstractions (at least with PostgreSQL) is that they are already incredibly robust tools that abstract ; they don't need more abstraction.
 
@@ -170,10 +167,11 @@ A list of behaviours from various ORMs that we think are heinous and should not 
 # Introduction
 
 1. Write your PostgreSQL schema in raw SQL, giving you full control over what your database tables look like.
-  - Use any `Postgres` type you want.
-  - Write any table constraints that you want.
-  - Write any database triggers that you want.
-  - Define any column types.
+
+- Use any `Postgres` type you want.
+- Write any table constraints that you want.
+- Write any database triggers that you want.
+- Define any column types.
 
 2. Define a config file.
 
@@ -184,5 +182,3 @@ A list of behaviours from various ORMs that we think are heinous and should not 
 # Example
 
 # How it works
-
-
