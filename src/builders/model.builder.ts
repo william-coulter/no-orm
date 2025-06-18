@@ -42,6 +42,14 @@ ${buildUpdateManyFunction({ table, updatableColumns })}
 ${buildUpdateArgsType()}
 
 ${buildUpdateFunction()}
+
+${buildDeleteManyArgsType()}
+
+${buildDeleteManyFunction({ table })}
+
+${buildDeleteArgsType()}
+
+${buildDeleteOneFunction()}
 `;
 }
 
@@ -148,12 +156,10 @@ function buildGetManyArgsType(): string {
 }
 
 function buildGetManyFunction({ table }: { table: TableDetails }): string {
-  const primaryKey = table.columns.find((col) => col.isPrimaryKey);
-  if (!primaryKey) {
-    throw new NoPrimaryKeyError(table);
-  }
+  const primaryKey = getPrimaryKey(table);
 
-  const sqlType = mapPgTypeToUnnest(primaryKey.type.fullName);
+  // FIXME: Perhaps this should be an argument?
+  const primaryKeySqlType = mapPgTypeToUnnest(primaryKey.type.fullName);
 
   return `export async function getMany({
   connection,
@@ -162,7 +168,7 @@ function buildGetManyFunction({ table }: { table: TableDetails }): string {
   const query = sql.type(row)\`
     SELECT \${columnsFragment}
     FROM \${tableFragment}
-    WHERE ${primaryKey.name} = ANY(\${sql.array(ids, "${sqlType}")})\`;
+    WHERE ${primaryKey.name} = ANY(\${sql.array(ids, "${primaryKeySqlType}")})\`;
 
   return connection.any(query);
 }`;
@@ -201,9 +207,7 @@ function buildUpdateManyFunction({
   table: TableDetails;
   updatableColumns: TableColumn[];
 }): string {
-  const primaryKey = table.columns.find((col) => col.isPrimaryKey);
-  if (!primaryKey) throw new NoPrimaryKeyError(table);
-
+  const primaryKey = getPrimaryKey(table);
   const primaryKeyVariable = `const ${primaryKey.name}s = newRows.map((row) => row.${primaryKey.name})`;
   const updatableVariables = updatableColumns
     .map(
@@ -261,6 +265,40 @@ function buildUpdateFunction(): string {
 }`;
 }
 
+/** Builds the `DeleteManyArgs` type. */
+function buildDeleteManyArgsType(): string {
+  return `export type DeleteManyArgs = BaseArgs & { ids: Id[] };`;
+}
+
+/** Builds the `deleteMany` function. */
+function buildDeleteManyFunction({ table }: { table: TableDetails }): string {
+  const primaryKey = getPrimaryKey(table);
+  const primaryKeySqlType = mapPgTypeToUnnest(primaryKey.type.fullName);
+
+  return `export async function deleteMany({
+  connection,
+  ids,
+}: DeleteManyArgs): Promise<void> {
+  const query = sql.type(row)\`
+    DELETE FROM \${columnsFragment}
+    WHERE ${primaryKey.name} = ANY(\${sql.array(ids, "${primaryKeySqlType}")})\`;
+
+  await connection.query(query);
+}`;
+}
+
+/** Builds the `DeleteArgs` type. */
+function buildDeleteArgsType(): string {
+  return `type DeleteArgs = BaseArgs & { id: Id };`;
+}
+
+/** Builds the `deleteOne` function. */
+function buildDeleteOneFunction(): string {
+  return `export async function deleteOne({ connection, id }: DeleteArgs): Promise<void> {
+  await deleteMany({ connection, ids: [id] });
+}`;
+}
+
 /** Converts PG types to TypeScript types. */
 function mapColumnBaseTypeToTypescriptType(fullName: string): string {
   switch (fullName) {
@@ -314,6 +352,14 @@ function mapPgTypeToUnnest(fullName: string): string {
     default:
       return "text";
   }
+}
+
+function getPrimaryKey(table: TableDetails): TableColumn {
+  const primaryKey = table.columns.find((col) => col.isPrimaryKey);
+  if (!primaryKey) {
+    throw new NoPrimaryKeyError(table);
+  }
+  return primaryKey;
 }
 
 class NoPrimaryKeyError extends Error {

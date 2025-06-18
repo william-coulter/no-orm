@@ -104,3 +104,22 @@ export async function update({ connection, newRow }: UpdateArgs): Promise<Row> {
   const result = await updateMany({ connection, newRows: [newRow] });
   return result[0];
 }
+
+export type DeleteManyArgs = BaseArgs & { ids: Id[] };
+
+export async function deleteMany({
+  connection,
+  ids,
+}: DeleteManyArgs): Promise<void> {
+  const query = sql.type(row)`
+    DELETE FROM ${columnsFragment}
+    WHERE id = ANY(${sql.array(ids, "int")})`;
+
+  await connection.query(query);
+}
+
+type DeleteArgs = BaseArgs & { id: Id };
+
+export async function deleteOne({ connection, id }: DeleteArgs): Promise<void> {
+  await deleteMany({ connection, ids: [id] });
+}
