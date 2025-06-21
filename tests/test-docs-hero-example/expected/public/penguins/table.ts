@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { sql } from "slonik";
+import { type ListSqlToken, sql } from "slonik";
 
 export const row = z.object({
   id: z.number().brand<"public.penguins">(),
@@ -19,3 +19,11 @@ export const columns = Object.keys(row.shape).map((col) =>
 );
 
 export const columnsFragment = sql.join(columns, sql.fragment`, `);
+
+export function aliasColumns(alias: string): ListSqlToken {
+  const aliasedColumns = Object.keys(row.shape).map((col) =>
+    sql.identifier([alias, col]),
+  );
+
+  return sql.join(aliasedColumns, sql.fragment`, `);
+}

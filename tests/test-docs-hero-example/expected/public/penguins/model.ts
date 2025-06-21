@@ -2,6 +2,7 @@ import { type CommonQueryMethods, sql } from "slonik";
 import {
   type Id,
   type Row,
+  aliasColumns,
   columnsFragment,
   row,
   tableFragment,
@@ -21,9 +22,11 @@ export async function createMany({
   connection,
   shapes,
 }: CreateManyArgs): Promise<readonly Row[]> {
-  const name_shapes = shapes.map((shape) => shape.name);
-  const species_shapes = shapes.map((shape) => shape.species);
-  const waddle_speed_kph_shapes = shapes.map((shape) => shape.waddle_speed_kph);
+  const tuples = shapes.map((shape) => [
+    shape.name,
+    shape.species,
+    shape.waddle_speed_kph,
+  ]);
 
   const query = sql.type(row)`
     INSERT INTO ${tableFragment} (
@@ -31,10 +34,9 @@ export async function createMany({
       species,
       waddle_speed_kph
     )
-    SELECT ${columnsFragment} FROM ${sql.unnest(
-      [name_shapes, species_shapes, waddle_speed_kph_shapes],
-      ["text", "text", "numeric"],
-    )}
+    SELECT name, species, waddle_speed_kph
+    FROM ${sql.unnest(tuples, ["text", "text", "numeric"])}
+      AS input(name, species, waddle_speed_kph)
     RETURNING ${columnsFragment}`;
 
   return connection.any(query);
@@ -56,7 +58,7 @@ export async function getMany({
   const query = sql.type(row)`
     SELECT ${columnsFragment}
     FROM ${tableFragment}
-    WHERE id = ANY(${sql.array(ids, "int")})`;
+    WHERE id = ANY(${sql.array(ids, "int4")})`;
 
   return connection.any(query);
 }
@@ -76,24 +78,26 @@ export function updateMany({
   connection,
   newRows,
 }: UpdateManyArgs): Promise<readonly Row[]> {
-  const ids = newRows.map((row) => row.id);
-  const name_updates = newRows.map((row) => row.name);
-  const species_updates = newRows.map((row) => row.species);
-  const waddle_speed_kph_updates = newRows.map((row) => row.waddle_speed_kph);
+  const tuples = newRows.map((newRow) => [
+    newRow.id,
+    newRow.name,
+    newRow.species,
+    newRow.waddle_speed_kph,
+  ]);
 
   const query = sql.type(row)`
     UPDATE ${tableFragment} AS t SET
-      name = u.name,
-      species = u.species,
-      waddle_speed_kph = u.waddle_speed_kph
-    FROM (
-      SELECT ${columnsFragment} FROM ${sql.unnest(
-        [ids, name_updates, species_updates, waddle_speed_kph_updates],
-        ["int", "text", "text", "numeric"],
-      )}
-    ) AS u(id, name, species, waddle_speed_kph)
-    WHERE t.id = u.id
-    RETURNING ${columnsFragment}`;
+      name = input.name,
+      species = input.species,
+      waddle_speed_kph = input.waddle_speed_kph
+    FROM ${sql.unnest(tuples, [
+      "int4",
+      "text",
+      "text",
+      "numeric",
+    ])} AS input(id, name, species, waddle_speed_kph)
+  WHERE t.id = input.id
+  RETURNING ${aliasColumns("t")}`;
 
   return connection.any(query);
 }
@@ -112,8 +116,8 @@ export async function deleteMany({
   ids,
 }: DeleteManyArgs): Promise<void> {
   const query = sql.type(row)`
-    DELETE FROM ${columnsFragment}
-    WHERE id = ANY(${sql.array(ids, "int")})`;
+    DELETE FROM ${tableFragment}
+    WHERE id = ANY(${sql.array(ids, "int4")})`;
 
   await connection.query(query);
 }
