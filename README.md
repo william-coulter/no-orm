@@ -1,3 +1,12 @@
+# TODO List:
+
+- Test more types.
+- Test enums, domain, composite, range.
+- Test foreign keys.
+- Test indexes.
+- Add logger (warn on unknown types, add loading spinner).
+- Address all `TODO`s / `FIXME`s in the code.
+
 # No ORM!
 
 Generate type-safe Slonik / Zod interfaces and access patterns from your PostgreSQL schema.
