@@ -106,7 +106,7 @@ function buildCreateManyFunction({
 
   const tuples = fieldNames.map((n) => `shape.${n}`).join(`,\n    `);
   const unnestTypes = columns
-    .map((col) => `"${mapPgTypeToUnnest(col.type.fullName)}"`)
+    .map((col) => `"${mapPgTypeToUnnestType(col)}"`)
     .join(", ");
 
   return `export async function createMany({
@@ -152,7 +152,7 @@ function buildGetManyFunction({ table }: { table: TableDetails }): string {
   const primaryKey = getPrimaryKey(table);
 
   // FIXME: Perhaps this should be an argument?
-  const primaryKeySqlType = mapPgTypeToUnnest(primaryKey.type.fullName);
+  const primaryKeySqlType = mapPgTypeToUnnestType(primaryKey);
 
   return `export async function getMany({
   connection,
@@ -217,7 +217,7 @@ function buildUpdateManyFunction({
     (c) => `${c.name}_updates`,
   );
   const unnestTypes = table.columns.map(
-    (col) => `"${mapPgTypeToUnnest(col.type.fullName)}"`,
+    (col) => `"${mapPgTypeToUnnestType(col)}"`,
   );
 
   const aliasColumns = table.columns.map((col) => col.name).join(", ");
@@ -266,7 +266,7 @@ function buildDeleteManyArgsType(): string {
 /** Builds the `deleteMany` function. */
 function buildDeleteManyFunction({ table }: { table: TableDetails }): string {
   const primaryKey = getPrimaryKey(table);
-  const primaryKeySqlType = mapPgTypeToUnnest(primaryKey.type.fullName);
+  const primaryKeySqlType = mapPgTypeToUnnestType(primaryKey);
 
   return `export async function deleteMany({
   connection,
@@ -319,34 +319,17 @@ function mapColumnBaseTypeToTypescriptType(fullName: string): string {
   }
 }
 
-/** Converts PG types to SQL unnest types. */
-// TODO: I think this will need a refactor. Can I just strip the section that isn't `pg_catalog`?
-function mapPgTypeToUnnest(fullName: string): string {
-  switch (fullName) {
-    case "pg_catalog.int2":
-    case "pg_catalog.int4":
-    case "pg_catalog.int8":
-      return "int";
-    case "pg_catalog.float4":
-    case "pg_catalog.float8":
-    case "pg_catalog.numeric":
-      return "numeric";
-    case "pg_catalog.text":
-    case "pg_catalog.varchar":
-    case "pg_catalog.bpchar":
-      return "text";
-    case "pg_catalog.uuid":
-      return "uuid";
-    case "pg_catalog.bool":
-      return "bool";
-    case "pg_catalog.date":
-      return "date";
-    case "pg_catalog.timestamp":
-    case "pg_catalog.timestamptz":
-      return "timestamp";
-    default:
-      return "text";
+/**
+ * Converts PG types to a string that can be used to specify the type in a SQL `UNNEST` block.
+ *
+ * E.g `pg_catalog.int4` -> `int4`, `pg_catalog.timestamptz` -> `timestamptz` etc.
+ */
+function mapPgTypeToUnnestType(column: TableColumn): string {
+  if (column.type.kind === "base") {
+    return column.type.fullName.replace("pg_catalog.", "");
   }
+
+  return "text";
 }
 
 function getPrimaryKey(table: TableDetails): TableColumn {
