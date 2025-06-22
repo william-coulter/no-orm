@@ -71,7 +71,7 @@ function getUpdatableColumns({
 function buildImports(): string {
   const DEFAULT_IMPORTS: string[] = [
     `import { type CommonQueryMethods, sql } from "slonik"`,
-    `import { type Id, type Row, columnsFragment, row, tableFragment } from "./table"`,
+    `import { type Id, type Row, aliasColumns, columnsFragment, row, tableFragment } from "./table"`,
   ];
   return DEFAULT_IMPORTS.map((s) => `${s};`).join("\n");
 }
