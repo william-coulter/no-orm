@@ -37,6 +37,7 @@
     "orm"
   ],
   "dependencies": {
+    "chalk": "^5.4.1",
     "extract-pg-schema": "^5.7.1",
     "prettier": "^3.5.3"
   },

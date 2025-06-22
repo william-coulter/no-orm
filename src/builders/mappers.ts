@@ -1,11 +1,18 @@
 import { TableColumn } from "extract-pg-schema";
 
+import * as logger from "../logger";
+
 /** Converts a Postgres table column into a Zod schema type that can be added to a Zod object schema. */
 export function columnToZodType(column: TableColumn): string {
   if (column.type.kind === "base") {
     return mapColumnBaseTypeToZodType(column.type.fullName);
   }
 
+  logger.warn(`Could not map column to a zod type, defaulting to 'z.any()'. 
+  Schema: '${column.informationSchemaValue.table_schema}'.
+  Table: '${column.informationSchemaValue.table_name}'.
+  Column: '${column.name}'.
+  Type: ${JSON.stringify(column.type, null, 2)}`);
   return "z.any()";
 }
 
@@ -15,6 +22,11 @@ export function columnToTypescriptType(column: TableColumn): string {
     return mapColumnBaseTypeToTypescriptType(column.type.fullName);
   }
 
+  logger.warn(`Could not map column to a Typescript type, defaulting to 'any'. 
+  Schema: '${column.informationSchemaValue.table_schema}'.
+  Table: '${column.informationSchemaValue.table_name}'.
+  Column: '${column.name}'.
+  Type: ${JSON.stringify(column.type, null, 2)}`);
   return "any";
 }
 
