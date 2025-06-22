@@ -76,6 +76,7 @@ function buildRowType(): string {
 
 /** Builds the `Id` type. */
 function buildIdType(): string {
+  // FIXME: This should be based on the primary key, not hard-coded "id".
   return `export type Id = Row["id"];`;
 }
 
