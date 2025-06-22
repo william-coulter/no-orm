@@ -5,28 +5,26 @@ type BuildArgs = {
 };
 
 export async function build({ table }: BuildArgs): Promise<string> {
-  return `${buildImports({})}
+  return `${buildImports()}
 
 ${buildRow({ table })}
 
-${buildRowType({})}
+${buildRowType()}
 
-${buildIdType({})}
+${buildIdType()}
 
 ${buildTableFragment({ table })}
 
-${buildColumnsIdentifier({})}
+${buildColumnsIdentifier()}
 
-${buildColumnsFragment({})}
+${buildColumnsFragment()}
 
 ${buildAliasColumns()}
 `;
 }
 
-type BuildImportsArgs = {};
-
 /** Builds the Typescript imports required for the file. */
-function buildImports({}: BuildImportsArgs): string {
+function buildImports(): string {
   const DEFAULT_IMPORTS: string[] = [
     `import { z } from "zod"`,
     `import { type ListSqlToken, sql } from "slonik"`,
@@ -110,17 +108,13 @@ function getColumnBranding(
   return "";
 }
 
-type BuildRowTypeArgs = {};
-
 /** Builds the `Row` type. */
-function buildRowType({}: BuildRowTypeArgs): string {
+function buildRowType(): string {
   return `export type Row = z.infer<typeof row>;`;
 }
 
-type BuildIdTypeArgs = {};
-
 /** Builds the `Id` type. */
-function buildIdType({}: BuildIdTypeArgs): string {
+function buildIdType(): string {
   return `export type Id = Row["id"];`;
 }
 
@@ -131,19 +125,15 @@ function buildTableFragment({ table }: BuildTableFragmentArgs): string {
   return `export const tableFragment = sql.identifier(["${table.schemaName}", "${table.name}"]);`;
 }
 
-type BuildColumnsIdentifierArgs = {};
-
 /** Builds the `columns` slonik SqlIdentifiers. */
-function buildColumnsIdentifier({}: BuildColumnsIdentifierArgs): string {
+function buildColumnsIdentifier(): string {
   return `export const columns = Object.keys(row.shape).map((col) =>
   sql.identifier([col]),
 );`;
 }
 
-type BuildColumnsFragmentArgs = {};
-
 /** Builds the `columnsFragment` slonik SQL fragment. */
-function buildColumnsFragment({}: BuildColumnsFragmentArgs): string {
+function buildColumnsFragment(): string {
   return `export const columnsFragment = sql.join(columns, sql.fragment\`, \`);`;
 }
 
