@@ -18,6 +18,8 @@ ${buildTableFragment({ table })}
 ${buildColumnsIdentifier({})}
 
 ${buildColumnsFragment({})}
+
+${buildAliasColumns()}
 `;
 }
 
@@ -27,7 +29,7 @@ type BuildImportsArgs = {};
 function buildImports({}: BuildImportsArgs): string {
   const DEFAULT_IMPORTS: string[] = [
     `import { z } from "zod"`,
-    `import { sql } from "slonik"`,
+    `import { type ListSqlToken, sql } from "slonik"`,
   ];
 
   return DEFAULT_IMPORTS.map((s) => `${s};`).join("\n");
@@ -143,4 +145,15 @@ type BuildColumnsFragmentArgs = {};
 /** Builds the `columnsFragment` slonik SQL fragment. */
 function buildColumnsFragment({}: BuildColumnsFragmentArgs): string {
   return `export const columnsFragment = sql.join(columns, sql.fragment\`, \`);`;
+}
+
+/** Builds the `aliasColumns` function. */
+function buildAliasColumns(): string {
+  return `export function aliasColumns(alias: string): ListSqlToken {
+  const aliasedColumns = Object.keys(row.shape).map((col) =>
+    sql.identifier([alias, col]),
+  );
+
+  return sql.join(aliasedColumns, sql.fragment\`, \`);
+}`;
 }
