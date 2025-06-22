@@ -40,6 +40,11 @@ export function pgTypeToUnnestType(column: TableColumn): string {
     return column.type.fullName.replace("pg_catalog.", "");
   }
 
+  logger.warn(`Could not map column to a unnest type, defaulting to "text". 
+  Schema: '${column.informationSchemaValue.table_schema}'.
+  Table: '${column.informationSchemaValue.table_name}'.
+  Column: '${column.name}'.
+  Type: ${JSON.stringify(column.type, null, 2)}`);
   return "text";
 }
 
