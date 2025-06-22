@@ -2,6 +2,8 @@
 
 - Test more types.
 - Test enums, domain, composite, range.
+- Test NULL-ability.
+- Test readonly and omitted columns.
 - Test foreign keys.
 - Test indexes.
 - Add logger (warn on unknown types, add loading spinner).
