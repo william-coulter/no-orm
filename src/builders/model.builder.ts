@@ -104,33 +104,26 @@ function buildCreateManyFunction({
 }): string {
   const fieldNames = columns.map((col) => col.name);
 
-  const shapes = fieldNames
-    .map(
-      (name) => `const ${name}_shapes = shapes.map((shape) => shape.${name})`,
-    )
-    .map((s) => `${s};`)
-    .join("\n");
-
-  const insertColumns = fieldNames.join(",\n      ");
-  const unnestArray = `[${fieldNames.map((n) => `${n}_shapes`).join(", ")}]`;
-  const unnestTypes = `[${columns
+  const tuples = fieldNames.map((n) => `shape.${n}`).join(`,\n    `);
+  const unnestTypes = columns
     .map((col) => `"${mapPgTypeToUnnest(col.type.fullName)}"`)
-    .join(", ")}]`;
+    .join(", ");
 
   return `export async function createMany({
   connection,
   shapes,
 }: CreateManyArgs): Promise<readonly Row[]> {
-${shapes}
+  const tuples = shapes.map((shape) => [
+    ${tuples}
+  ]);
 
   const query = sql.type(row)\`
     INSERT INTO \${tableFragment} (
-      ${insertColumns}
+      ${fieldNames.join(",\n      ")}
     )
-    SELECT \${columnsFragment} FROM \${sql.unnest(
-      ${unnestArray},
-      ${unnestTypes},
-    )}
+    SELECT ${fieldNames.join(", ")}
+    FROM \${sql.unnest(tuples, [${unnestTypes}])}
+      AS input(${fieldNames.join(", ")})
     RETURNING \${columnsFragment}\`;
 
   return connection.any(query);
