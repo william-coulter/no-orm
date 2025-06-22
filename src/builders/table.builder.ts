@@ -1,4 +1,5 @@
 import { TableColumn, TableDetails } from "extract-pg-schema";
+import { columnToZodType } from "./mappers";
 
 type BuildArgs = {
   table: TableDetails;
@@ -50,46 +51,6 @@ function buildRow({ table }: BuildRowArgs): string {
   return `export const row = z.object({
 ${zodFields}
 });`;
-}
-
-/** Converts a Postgres table column into a Zod schema type that can be added to a Zod object schema. */
-function columnToZodType(column: TableColumn): string {
-  if (column.type.kind === "base") {
-    return mapColumnBaseTypeToZodType(column.type.fullName);
-  }
-
-  return "z.any()";
-}
-
-/** Given a column of kind `base` will return zod type. */
-function mapColumnBaseTypeToZodType(fullName: string): string {
-  switch (fullName) {
-    case "pg_catalog.int2":
-    case "pg_catalog.int4":
-    case "pg_catalog.int8":
-    case "pg_catalog.float4":
-    case "pg_catalog.float8":
-    case "pg_catalog.numeric": {
-      return "z.number()";
-    }
-    case "pg_catalog.text":
-    case "pg_catalog.varchar":
-    case "pg_catalog.bpchar":
-    case "pg_catalog.uuid": {
-      return "z.string()";
-    }
-    case "pg_catalog.bool": {
-      return "z.boolean()";
-    }
-    case "pg_catalog.date":
-    case "pg_catalog.timestamp":
-    case "pg_catalog.timestamptz": {
-      return "z.string()";
-    }
-    default: {
-      return "z.any()";
-    }
-  }
 }
 
 /**

@@ -1,4 +1,5 @@
 import { TableColumn, TableDetails } from "extract-pg-schema";
+import { columnToTypescriptType, pgTypeToUnnestType } from "./mappers";
 
 type BuildArgs = {
   table: TableDetails;
@@ -84,8 +85,7 @@ function buildBaseArgsType(): string {
 /** Builds the `Create` type. */
 function buildCreateType({ columns }: { columns: TableColumn[] }): string {
   const createFields = columns.map(
-    (col) =>
-      `${col.name}: ${mapColumnBaseTypeToTypescriptType(col.type.fullName)}`,
+    (col) => `${col.name}: ${columnToTypescriptType(col)}`,
   );
 
   return `export type Create = { ${createFields.map((s) => `${s};`).join("\n")} };`;
@@ -106,7 +106,7 @@ function buildCreateManyFunction({
 
   const tuples = fieldNames.map((n) => `shape.${n}`).join(`,\n    `);
   const unnestTypes = createColumns
-    .map((col) => `"${mapPgTypeToUnnestType(col)}"`)
+    .map((col) => `"${pgTypeToUnnestType(col)}"`)
     .join(", ");
 
   return `export async function createMany({
@@ -152,7 +152,7 @@ function buildGetManyFunction({ table }: { table: TableDetails }): string {
   const primaryKey = getPrimaryKey(table);
 
   // FIXME: Perhaps this should be an argument?
-  const primaryKeySqlType = mapPgTypeToUnnestType(primaryKey);
+  const primaryKeySqlType = pgTypeToUnnestType(primaryKey);
 
   return `export async function getMany({
   connection,
@@ -212,7 +212,7 @@ function buildUpdateManyFunction({
     .join(",\n      ");
 
   const unnestTypes = primaryKeyAndUpdatableColumns.map(
-    (col) => `"${mapPgTypeToUnnestType(col)}"`,
+    (col) => `"${pgTypeToUnnestType(col)}"`,
   );
 
   return `export function updateMany({
@@ -257,7 +257,7 @@ function buildDeleteManyArgsType(): string {
 /** Builds the `deleteMany` function. */
 function buildDeleteManyFunction({ table }: { table: TableDetails }): string {
   const primaryKey = getPrimaryKey(table);
-  const primaryKeySqlType = mapPgTypeToUnnestType(primaryKey);
+  const primaryKeySqlType = pgTypeToUnnestType(primaryKey);
 
   return `export async function deleteMany({
   connection,
@@ -283,44 +283,6 @@ function buildDeleteFunction(): string {
 }
 
 export { _delete as delete };`;
-}
-
-/** Converts PG types to TypeScript types. */
-function mapColumnBaseTypeToTypescriptType(fullName: string): string {
-  switch (fullName) {
-    case "pg_catalog.int2":
-    case "pg_catalog.int4":
-    case "pg_catalog.int8":
-    case "pg_catalog.float4":
-    case "pg_catalog.float8":
-    case "pg_catalog.numeric":
-      return "number";
-    case "pg_catalog.text":
-    case "pg_catalog.varchar":
-    case "pg_catalog.bpchar":
-    case "pg_catalog.uuid":
-    case "pg_catalog.date":
-    case "pg_catalog.timestamp":
-    case "pg_catalog.timestamptz":
-      return "string";
-    case "pg_catalog.bool":
-      return "boolean";
-    default:
-      return "any";
-  }
-}
-
-/**
- * Converts PG types to a string that can be used to specify the type in a SQL `UNNEST` block.
- *
- * E.g `pg_catalog.int4` -> `int4`, `pg_catalog.timestamptz` -> `timestamptz` etc.
- */
-function mapPgTypeToUnnestType(column: TableColumn): string {
-  if (column.type.kind === "base") {
-    return column.type.fullName.replace("pg_catalog.", "");
-  }
-
-  return "text";
 }
 
 function getPrimaryKey(table: TableDetails): TableColumn {
