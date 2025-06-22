@@ -14,6 +14,7 @@ export type Create = {
   name: string;
   species: string;
   waddle_speed_kph: number;
+  date_of_birth: Date;
 };
 
 export type CreateManyArgs = BaseArgs & { shapes: Create[] };
@@ -26,17 +27,19 @@ export async function createMany({
     shape.name,
     shape.species,
     shape.waddle_speed_kph,
+    shape.date_of_birth.toISOString(),
   ]);
 
   const query = sql.type(row)`
     INSERT INTO ${tableFragment} (
       name,
       species,
-      waddle_speed_kph
+      waddle_speed_kph,
+      date_of_birth
     )
-    SELECT name, species, waddle_speed_kph
-    FROM ${sql.unnest(tuples, ["text", "text", "numeric"])}
-      AS input(name, species, waddle_speed_kph)
+    SELECT name, species, waddle_speed_kph, date_of_birth
+    FROM ${sql.unnest(tuples, ["text", "text", "numeric", "timestamptz"])}
+      AS input(name, species, waddle_speed_kph, date_of_birth)
     RETURNING ${columnsFragment}`;
 
   return connection.any(query);
@@ -83,19 +86,22 @@ export function updateMany({
     newRow.name,
     newRow.species,
     newRow.waddle_speed_kph,
+    newRow.date_of_birth.toISOString(),
   ]);
 
   const query = sql.type(row)`
     UPDATE ${tableFragment} AS t SET
       name = input.name,
       species = input.species,
-      waddle_speed_kph = input.waddle_speed_kph
+      waddle_speed_kph = input.waddle_speed_kph,
+      date_of_birth = input.date_of_birth
     FROM ${sql.unnest(tuples, [
       "int4",
       "text",
       "text",
       "numeric",
-    ])} AS input(id, name, species, waddle_speed_kph)
+      "timestamptz",
+    ])} AS input(id, name, species, waddle_speed_kph, date_of_birth)
     WHERE t.id = input.id
     RETURNING ${aliasColumns("t")}`;
 

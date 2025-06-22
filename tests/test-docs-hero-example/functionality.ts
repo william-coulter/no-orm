@@ -1,8 +1,7 @@
 /** Tests that the functions from `model` execute without errors against the DB. */
-import { createPool } from "slonik";
+import { pool } from "../slonik-test-connection";
 import * as PenguinsModel from "./expected/public/penguins/model";
 
-const pool = await createPool(process.env.POSTGRES_CONNECTION_STRING ?? "", {});
 await pool.connect(async (connection) => {
   const create = await PenguinsModel.create({
     connection,
@@ -10,6 +9,7 @@ await pool.connect(async (connection) => {
       name: "Willy the penguin",
       species: "Adélie",
       waddle_speed_kph: 0.5,
+      date_of_birth: new Date("2025-01-01T03:00:00+10:00"),
     },
   });
 

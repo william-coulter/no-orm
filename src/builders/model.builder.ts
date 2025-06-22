@@ -1,5 +1,9 @@
 import { TableColumn, TableDetails } from "extract-pg-schema";
-import { columnToTypescriptType, pgTypeToUnnestType } from "./mappers";
+import {
+  columnToTypescriptType,
+  isDateLike,
+  pgTypeToUnnestType,
+} from "./mappers";
 
 type BuildArgs = {
   table: TableDetails;
@@ -104,7 +108,12 @@ function buildCreateManyFunction({
 }): string {
   const fieldNames = createColumns.map((col) => col.name);
 
-  const tuples = fieldNames.map((n) => `shape.${n}`).join(`,\n    `);
+  const tuples = createColumns
+    .map((col) => {
+      const dateLikeSuffix = isDateLike(col) ? ".toISOString()" : "";
+      return `shape.${col.name}${dateLikeSuffix}`;
+    })
+    .join(`,\n    `);
   const unnestTypes = createColumns
     .map((col) => `"${pgTypeToUnnestType(col)}"`)
     .join(", ");
@@ -204,7 +213,10 @@ function buildUpdateManyFunction({
   const primaryKeyAndUpdatableColumns = [primaryKey, ...updatableColumns];
 
   const tuples = primaryKeyAndUpdatableColumns
-    .map((c) => `newRow.${c.name}`)
+    .map((col) => {
+      const dateLikeSuffix = isDateLike(col) ? ".toISOString()" : "";
+      return `newRow.${col.name}${dateLikeSuffix}`;
+    })
     .join(`,\n    `);
 
   const columnUpdates = updatableColumns

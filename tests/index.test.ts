@@ -65,6 +65,7 @@ describe("no-orm", () => {
           POSTGRES_CONNECTION_STRING: connectionString,
           OUTPUT_DIRECTORY: testOutputDir,
         },
+        stdio: "inherit",
       },
     );
     expect(noOrmResult.exitCode).toEqual(0);
@@ -92,6 +93,7 @@ describe("no-orm", () => {
         ...process.env,
         POSTGRES_CONNECTION_STRING: connectionString,
       },
+      stdio: "inherit",
     });
     expect(functionalityResult.exitCode).toEqual(0);
 

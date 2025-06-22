@@ -71,7 +71,7 @@ function mapColumnBaseTypeToZodType(fullName: string): string {
     case "pg_catalog.date":
     case "pg_catalog.timestamp":
     case "pg_catalog.timestamptz": {
-      return "z.string()";
+      return "z.date()";
     }
     default: {
       return "z.any()";
@@ -93,13 +93,33 @@ function mapColumnBaseTypeToTypescriptType(fullName: string): string {
     case "pg_catalog.varchar":
     case "pg_catalog.bpchar":
     case "pg_catalog.uuid":
-    case "pg_catalog.date":
-    case "pg_catalog.timestamp":
-    case "pg_catalog.timestamptz":
       return "string";
     case "pg_catalog.bool":
       return "boolean";
+    case "pg_catalog.date":
+    case "pg_catalog.timestamp":
+    case "pg_catalog.timestamptz":
+      return "Date";
     default:
       return "any";
+  }
+}
+
+/** Returns `true` if the columns is a date-like type. */
+export function isDateLike(column: TableColumn): boolean {
+  if (column.type.kind !== "base") {
+    return false;
+  }
+
+  switch (column.type.fullName) {
+    case "pg_catalog.date":
+    case "pg_catalog.timestamp":
+    case "pg_catalog.timestamptz": {
+      return true;
+    }
+
+    default: {
+      return false;
+    }
   }
 }
