@@ -14,7 +14,7 @@
     "test": "vitest"
   },
   "peerDependencies": {
-    "slonik": "^35.2.1",
+    "slonik": "^46.4.0",
     "zod": "^3.25.51"
   },
   "devDependencies": {
@@ -22,6 +22,7 @@
     "@types/pg": "^8.15.4",
     "execa": "^9.6.0",
     "pg": "^8.16.0",
+    "slonik": "46.4.0",
     "testcontainers": "^11.0.0",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",
