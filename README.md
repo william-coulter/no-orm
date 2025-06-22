@@ -8,6 +8,7 @@
 - Test indexes.
 - Add logger (warn on unknown types, add loading spinner).
 - Address all `TODO`s / `FIXME`s in the code.
+- Test Primary Key not called "id".
 
 # No ORM!
 
