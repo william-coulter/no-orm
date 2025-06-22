@@ -19,7 +19,7 @@ ${buildCreateType({ columns: createColumns })}
 
 ${buildCreateManyArgsType()}
 
-${buildCreateManyFunction({ columns: createColumns })}
+${buildCreateManyFunction({ createColumns })}
 
 ${buildCreateArgsType()}
 
@@ -98,14 +98,14 @@ function buildCreateManyArgsType(): string {
 
 /** Builds the `createMany` function. */
 function buildCreateManyFunction({
-  columns,
+  createColumns,
 }: {
-  columns: TableColumn[];
+  createColumns: TableColumn[];
 }): string {
-  const fieldNames = columns.map((col) => col.name);
+  const fieldNames = createColumns.map((col) => col.name);
 
   const tuples = fieldNames.map((n) => `shape.${n}`).join(`,\n    `);
-  const unnestTypes = columns
+  const unnestTypes = createColumns
     .map((col) => `"${mapPgTypeToUnnestType(col)}"`)
     .join(", ");
 
@@ -201,45 +201,36 @@ function buildUpdateManyFunction({
   updatableColumns: TableColumn[];
 }): string {
   const primaryKey = getPrimaryKey(table);
-  const primaryKeyVariable = `const ${primaryKey.name}s = newRows.map((row) => row.${primaryKey.name})`;
-  const updatableVariables = updatableColumns
-    .map(
-      (c) => `const ${c.name}_updates = newRows.map((row) => row.${c.name});`,
-    )
-    .join("\n");
+  const primaryKeyAndUpdatableColumns = [primaryKey, ...updatableColumns];
 
-  const columnUpdate = updatableColumns
-    .map((c) => `${c.name} = u.${c.name}`)
+  const tuples = primaryKeyAndUpdatableColumns
+    .map((c) => `newRow.${c.name}`)
+    .join(`,\n    `);
+
+  const columnUpdates = updatableColumns
+    .map((c) => `${c.name} = input.${c.name}`)
     .join(",\n      ");
 
-  const unnestPrimaryKey = `${primaryKey.name}s`;
-  const unnestUpdatableVariables = updatableColumns.map(
-    (c) => `${c.name}_updates`,
-  );
-  const unnestTypes = table.columns.map(
+  const unnestTypes = primaryKeyAndUpdatableColumns.map(
     (col) => `"${mapPgTypeToUnnestType(col)}"`,
   );
-
-  const aliasColumns = table.columns.map((col) => col.name).join(", ");
 
   return `export function updateMany({
   connection,
   newRows,
 }: UpdateManyArgs): Promise<readonly Row[]> {
-  ${primaryKeyVariable}
-  ${updatableVariables}
+  const tuples = newRows.map((newRow) => [
+    ${tuples}
+  ]);
 
   const query = sql.type(row)\`
     UPDATE \${tableFragment} AS t SET
-      ${columnUpdate}
-    FROM (
-      SELECT \${columnsFragment} FROM \${sql.unnest(
-        [${[unnestPrimaryKey, ...unnestUpdatableVariables].join(", ")}],
-        [${unnestTypes}],
-      )}
-    ) AS u(${aliasColumns})
-    WHERE t.${primaryKey.name} = u.${primaryKey.name}
-    RETURNING \${columnsFragment}\`;
+      ${columnUpdates}
+    FROM \${sql.unnest(tuples, [
+      ${unnestTypes.join(",\n      ")}
+    ])} AS input(${primaryKeyAndUpdatableColumns.map((c) => c.name).join(", ")})
+    WHERE t.${primaryKey.name} = input.${primaryKey.name}
+    RETURNING \${aliasColumns("t")}\`;
 
   return connection.any(query);
 }`;

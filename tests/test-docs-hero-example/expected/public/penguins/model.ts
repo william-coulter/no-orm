@@ -96,8 +96,8 @@ export function updateMany({
       "text",
       "numeric",
     ])} AS input(id, name, species, waddle_speed_kph)
-  WHERE t.id = input.id
-  RETURNING ${aliasColumns("t")}`;
+    WHERE t.id = input.id
+    RETURNING ${aliasColumns("t")}`;
 
   return connection.any(query);
 }
