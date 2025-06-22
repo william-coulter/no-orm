@@ -264,7 +264,7 @@ function buildDeleteManyFunction({ table }: { table: TableDetails }): string {
   ids,
 }: DeleteManyArgs): Promise<void> {
   const query = sql.type(row)\`
-    DELETE FROM \${columnsFragment}
+    DELETE FROM \${tableFragment}
     WHERE ${primaryKey.name} = ANY(\${sql.array(ids, "${primaryKeySqlType}")})\`;
 
   await connection.query(query);
