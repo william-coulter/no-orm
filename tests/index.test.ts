@@ -56,7 +56,7 @@ describe("no-orm", () => {
     // First remove any previous test outputs.
     await fs.rm(testOutputDir, { recursive: true, force: true });
 
-    const result = await execa(
+    const noOrmResult = await execa(
       "npx",
       ["tsx", cliPath, "--config-path", configPath],
       {
@@ -67,7 +67,7 @@ describe("no-orm", () => {
         },
       },
     );
-    expect(result.exitCode).toEqual(0);
+    expect(noOrmResult.exitCode).toEqual(0);
 
     // For every file in `expected`, let's assert the same file exists in `test-outputs` and that it matches.
     const expectedPath = path.join(testCase.directory, "expected");
@@ -84,6 +84,16 @@ describe("no-orm", () => {
 
       expect(expectedContents).toEqual(actualContents);
     }
+
+    // Let's also assert that the generated functions can execute successfully against a database.
+    const functionalityPath = path.join(testCase.directory, "functionality.ts");
+    const functionalityResult = await execa("npx", ["tsx", functionalityPath], {
+      env: {
+        ...process.env,
+        POSTGRES_CONNECTION_STRING: connectionString,
+      },
+    });
+    expect(functionalityResult.exitCode).toEqual(0);
 
     // Drop tables for next test.
     await client.query(`
