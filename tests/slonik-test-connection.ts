@@ -38,12 +38,6 @@ function dateLikeParsers(): DriverTypeParser<Date>[] {
         return new Date(value);
       },
     },
-    {
-      name: "date",
-      parse: (value) => {
-        return new Date(value);
-      },
-    },
   ];
 }
 

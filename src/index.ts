@@ -7,6 +7,7 @@ import { Command } from "commander";
 import { format, resolveConfig, type Options } from "prettier";
 
 import { noOrmConfigSchema } from "./no-orm.config";
+import * as ParsersBuilder from "./builders/parsers.builder";
 import * as TableBuilder from "./builders/table.builder";
 import * as ModelBuilder from "./builders/model.builder";
 
@@ -30,6 +31,18 @@ async function run({ configPath }: RunArgs) {
     );
     // TODO: Make me a config argument.
     const prettierConfig = await resolveConfig(".prettierrc");
+
+    await mkdir(config.output_directory, {
+      recursive: true,
+    });
+
+    const parsersPath = path.join(config.output_directory, "parsers.ts");
+    const parsersContent = ParsersBuilder.build();
+    const formattedParsersContent = await prettierFormat(
+      parsersContent,
+      prettierConfig,
+    );
+    await writeFile(parsersPath, formattedParsersContent, "utf-8");
 
     const result = await extractSchemas({
       connectionString: config.postgres_connection_string,
