@@ -12,6 +12,8 @@
 
 # No ORM!
 
+Build your Typescript server code without learning a new ORM abstraction.
+
 Generate type-safe Slonik / Zod interfaces and access patterns from your PostgreSQL schema.
 
 # Motivation
