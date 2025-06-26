@@ -1,10 +1,10 @@
 # TODO List:
 
-- Test enums, domain, composite, range.
 - Test NULL-ability.
-- Test readonly and omitted columns.
 - Test foreign keys.
 - Test indexes.
+- Test enums, domain, composite, range.
+- Test readonly and omitted columns.
 - Add logger (warn on unknown types, add loading spinner).
 - Address all `TODO`s / `FIXME`s in the code.
 - Test Primary Key not called "id".
