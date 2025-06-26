@@ -9,7 +9,15 @@ function buildImports(): string {
 }
 
 function buildJsonParser(): string {
-  return `const jsonValue: z.ZodType<unknown> = z.lazy(() =>
+  return `export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
+export const jsonValue: z.ZodType<JsonValue> = z.lazy(() =>
   z.union([
     z.string(),
     z.number(),
@@ -17,6 +25,7 @@ function buildJsonParser(): string {
     z.null(),
     z.array(jsonValue),
     z.record(jsonValue),
-  ])
-);`;
+  ]),
+);
+`;
 }

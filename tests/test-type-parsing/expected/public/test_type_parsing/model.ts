@@ -1,4 +1,3 @@
-import z from "zod";
 import { type CommonQueryMethods, sql } from "slonik";
 import {
   type Id,
@@ -8,6 +7,7 @@ import {
   row,
   tableFragment,
 } from "./table";
+import { z } from "zod";
 import { jsonValue } from "../../parsers";
 
 type BaseArgs = { connection: CommonQueryMethods };
@@ -80,8 +80,8 @@ export async function createMany({
     shape.a_inet,
     shape.a_int,
     shape.a_interval,
-    shape.a_json,
-    shape.a_jsonb,
+    JSON.stringify(shape.a_json),
+    JSON.stringify(shape.a_jsonb),
     shape.a_line,
     shape.a_lseg,
     shape.a_macaddr,
@@ -215,8 +215,8 @@ export function updateMany({
     newRow.a_inet,
     newRow.a_int,
     newRow.a_interval,
-    newRow.a_json,
-    newRow.a_jsonb,
+    JSON.stringify(newRow.a_json),
+    JSON.stringify(newRow.a_jsonb),
     newRow.a_line,
     newRow.a_lseg,
     newRow.a_macaddr,

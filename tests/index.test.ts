@@ -78,18 +78,17 @@ describe("no-orm", () => {
     const expectedPath = path.join(testCase.directory, "expected");
     const expectedFilePaths = await getAllRelativeFilePaths(expectedPath);
 
-    // STARTHERE: Current expected looks good. Need to update builders a bit.
-    // for (const relativePath of expectedFilePaths) {
-    //   const expectedFile = path.join(expectedPath, relativePath);
-    //   const actualFile = path.join(testOutputDir, relativePath);
+    for (const relativePath of expectedFilePaths) {
+      const expectedFile = path.join(expectedPath, relativePath);
+      const actualFile = path.join(testOutputDir, relativePath);
 
-    //   const [expectedContents, actualContents] = await Promise.all([
-    //     safeReadFile(expectedFile, "utf8"),
-    //     safeReadFile(actualFile, "utf8"),
-    //   ]);
+      const [expectedContents, actualContents] = await Promise.all([
+        safeReadFile(expectedFile, "utf8"),
+        safeReadFile(actualFile, "utf8"),
+      ]);
 
-    //   expect(expectedContents).toEqual(actualContents);
-    // }
+      expect(expectedContents).toEqual(actualContents);
+    }
 
     // Let's also assert that the generated functions can execute successfully against a database.
     const functionalityPath = path.join(testCase.directory, "functionality.ts");

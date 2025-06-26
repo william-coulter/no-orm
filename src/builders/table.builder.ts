@@ -1,12 +1,12 @@
 import { TableColumn, TableDetails } from "extract-pg-schema";
-import { columnToZodType } from "./mappers";
+import { columnToZodType, isJsonLike } from "./mappers";
 
 type BuildArgs = {
   table: TableDetails;
 };
 
 export async function build({ table }: BuildArgs): Promise<string> {
-  return `${buildImports()}
+  return `${buildImports({ table })}
 
 ${buildRow({ table })}
 
@@ -25,13 +25,19 @@ ${buildAliasColumns()}
 }
 
 /** Builds the Typescript imports required for the file. */
-function buildImports(): string {
+function buildImports({ table }: { table: TableDetails }): string {
   const DEFAULT_IMPORTS: string[] = [
     `import { z } from "zod"`,
     `import { type ListSqlToken, sql } from "slonik"`,
   ];
+  const imports = DEFAULT_IMPORTS;
 
-  return DEFAULT_IMPORTS.map((s) => `${s};`).join("\n");
+  const containsJsonColumn = table.columns.some(isJsonLike);
+  if (containsJsonColumn) {
+    imports.push(`import { jsonValue } from "../../parsers"`);
+  }
+
+  return imports.map((s) => `${s};`).join("\n");
 }
 
 type BuildRowArgs = {

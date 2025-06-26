@@ -87,7 +87,7 @@ function mapColumnBaseTypeToZodType(column: TableColumn): string {
     }
     case "pg_catalog.json":
     case "pg_catalog.jsonb": {
-      return "z.string()";
+      return "jsonValue";
     }
     case "pg_catalog.bit":
     case "pg_catalog.varbit": {
@@ -177,7 +177,7 @@ function mapColumnBaseTypeToTypescriptType(column: TableColumn): string {
     }
     case "pg_catalog.json":
     case "pg_catalog.jsonb": {
-      return "string";
+      return "z.infer<typeof jsonValue>";
     }
     case "pg_catalog.bit":
     case "pg_catalog.varbit": {
@@ -237,6 +237,23 @@ export function isDateLike(column: TableColumn): boolean {
   switch (column.type.fullName) {
     case "pg_catalog.timestamp":
     case "pg_catalog.timestamptz": {
+      return true;
+    }
+
+    default: {
+      return false;
+    }
+  }
+}
+
+export function isJsonLike(column: TableColumn): boolean {
+  if (column.type.kind !== "base") {
+    return false;
+  }
+
+  switch (column.type.fullName) {
+    case "pg_catalog.json":
+    case "pg_catalog.jsonb": {
       return true;
     }
 

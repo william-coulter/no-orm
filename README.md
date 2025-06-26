@@ -1,6 +1,5 @@
 # TODO List:
 
-- Test more types.
 - Test enums, domain, composite, range.
 - Test NULL-ability.
 - Test readonly and omitted columns.

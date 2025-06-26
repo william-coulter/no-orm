@@ -2,6 +2,7 @@ import { TableColumn, TableDetails } from "extract-pg-schema";
 import {
   columnToTypescriptType,
   isDateLike,
+  isJsonLike,
   pgTypeToUnnestType,
 } from "./mappers";
 
@@ -16,7 +17,7 @@ export async function build({ table }: BuildArgs): Promise<string> {
   // TODO: Also include any user-supplied readOnly, or omitted columns.
   const updatableColumns: TableColumn[] = getUpdatableColumns({ table });
 
-  return `${buildImports()}
+  return `${buildImports({ table })}
 
 ${buildBaseArgsType()}
 
@@ -73,12 +74,20 @@ function getUpdatableColumns({
 }
 
 /** Builds import statements. */
-function buildImports(): string {
+function buildImports({ table }: { table: TableDetails }): string {
   const DEFAULT_IMPORTS: string[] = [
     `import { type CommonQueryMethods, sql } from "slonik"`,
     `import { type Id, type Row, aliasColumns, columnsFragment, row, tableFragment } from "./table"`,
   ];
-  return DEFAULT_IMPORTS.map((s) => `${s};`).join("\n");
+  const imports = DEFAULT_IMPORTS;
+
+  const containsJsonColumn = table.columns.some(isJsonLike);
+  if (containsJsonColumn) {
+    imports.push(`import { z } from "zod"`);
+    imports.push(`import { jsonValue } from "../../parsers"`);
+  }
+
+  return imports.map((s) => `${s};`).join("\n");
 }
 
 /** Builds the `BaseArgs` type. */
@@ -110,8 +119,13 @@ function buildCreateManyFunction({
 
   const tuples = createColumns
     .map((col) => {
-      const dateLikeSuffix = isDateLike(col) ? ".toISOString()" : "";
-      return `shape.${col.name}${dateLikeSuffix}`;
+      if (isDateLike(col)) {
+        return `shape.${col.name}.toISOString()`;
+      } else if (isJsonLike(col)) {
+        return `JSON.stringify(shape.${col.name})`;
+      } else {
+        return `shape.${col.name}`;
+      }
     })
     .join(`,\n    `);
   const unnestTypes = createColumns
@@ -214,8 +228,13 @@ function buildUpdateManyFunction({
 
   const tuples = primaryKeyAndUpdatableColumns
     .map((col) => {
-      const dateLikeSuffix = isDateLike(col) ? ".toISOString()" : "";
-      return `newRow.${col.name}${dateLikeSuffix}`;
+      if (isDateLike(col)) {
+        return `newRow.${col.name}.toISOString()`;
+      } else if (isJsonLike(col)) {
+        return `JSON.stringify(newRow.${col.name})`;
+      } else {
+        return `newRow.${col.name}`;
+      }
     })
     .join(`,\n    `);
 
