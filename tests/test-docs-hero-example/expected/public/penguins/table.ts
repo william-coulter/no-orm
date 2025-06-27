@@ -6,6 +6,7 @@ export const row = z.object({
   name: z.string(),
   species: z.string(),
   waddle_speed_kph: z.number(),
+  favourite_snack: z.string().nullable(),
   date_of_birth: z.date(),
 });
 

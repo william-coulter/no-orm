@@ -39,7 +39,7 @@ ${buildGetArgsType()}
 
 ${buildGetFunction()}
 
-${buildUpdateType({ updatableColumns })}
+${buildUpdateType({ table, updatableColumns })}
 
 ${buildUpdateManyArgsType()}
 
@@ -97,9 +97,11 @@ function buildBaseArgsType(): string {
 
 /** Builds the `Create` type. */
 function buildCreateType({ columns }: { columns: TableColumn[] }): string {
-  const createFields = columns.map(
-    (col) => `${col.name}: ${columnToTypescriptType(col)}`,
-  );
+  const createFields = columns.map((col) => {
+    const nullableText = col.isNullable ? " | null" : "";
+
+    return `${col.name}: ${columnToTypescriptType(col)}${nullableText}`;
+  });
 
   return `export type Create = { ${createFields.map((s) => `${s};`).join("\n")} };`;
 }
@@ -203,11 +205,21 @@ function buildGetFunction(): string {
 
 /** Builds the `Update` type. */
 function buildUpdateType({
+  table,
   updatableColumns,
 }: {
+  table: TableDetails;
   updatableColumns: TableColumn[];
 }): string {
-  return `type Update = Row;`;
+  const primaryKey = getPrimaryKey(table);
+
+  const updateFields = updatableColumns.map((col) => {
+    const nullableText = col.isNullable ? " | null" : "";
+
+    return `${col.name}: ${columnToTypescriptType(col)}${nullableText}`;
+  });
+
+  return `export type Update = { ${updateFields.map((s) => `${s};`).join("\n")} } & { ${primaryKey.name}: Id };`;
 }
 
 /** Builds the `UpdateManyArgs` type. */

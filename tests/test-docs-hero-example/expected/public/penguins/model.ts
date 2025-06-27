@@ -14,6 +14,7 @@ export type Create = {
   name: string;
   species: string;
   waddle_speed_kph: number;
+  favourite_snack: string | null;
   date_of_birth: Date;
 };
 
@@ -27,6 +28,7 @@ export async function createMany({
     shape.name,
     shape.species,
     shape.waddle_speed_kph,
+    shape.favourite_snack,
     shape.date_of_birth.toISOString(),
   ]);
 
@@ -35,11 +37,12 @@ export async function createMany({
       name,
       species,
       waddle_speed_kph,
+      favourite_snack,
       date_of_birth
     )
-    SELECT name, species, waddle_speed_kph, date_of_birth
-    FROM ${sql.unnest(tuples, ["text", "text", "numeric", "timestamptz"])}
-      AS input(name, species, waddle_speed_kph, date_of_birth)
+    SELECT name, species, waddle_speed_kph, favourite_snack, date_of_birth
+    FROM ${sql.unnest(tuples, ["text", "text", "numeric", "text", "timestamptz"])}
+      AS input(name, species, waddle_speed_kph, favourite_snack, date_of_birth)
     RETURNING ${columnsFragment}`;
 
   return connection.any(query);
@@ -73,7 +76,13 @@ export async function get({ connection, id }: GetArgs): Promise<Row> {
   return result[0];
 }
 
-type Update = Row;
+export type Update = {
+  name: string;
+  species: string;
+  waddle_speed_kph: number;
+  favourite_snack: string | null;
+  date_of_birth: Date;
+} & { id: Id };
 
 export type UpdateManyArgs = BaseArgs & { newRows: Update[] };
 
@@ -86,6 +95,7 @@ export function updateMany({
     newRow.name,
     newRow.species,
     newRow.waddle_speed_kph,
+    newRow.favourite_snack,
     newRow.date_of_birth.toISOString(),
   ]);
 
@@ -94,14 +104,16 @@ export function updateMany({
       name = input.name,
       species = input.species,
       waddle_speed_kph = input.waddle_speed_kph,
+      favourite_snack = input.favourite_snack,
       date_of_birth = input.date_of_birth
     FROM ${sql.unnest(tuples, [
       "int4",
       "text",
       "text",
       "numeric",
+      "text",
       "timestamptz",
-    ])} AS input(id, name, species, waddle_speed_kph, date_of_birth)
+    ])} AS input(id, name, species, waddle_speed_kph, favourite_snack, date_of_birth)
     WHERE t.id = input.id
     RETURNING ${aliasColumns("t")}`;
 

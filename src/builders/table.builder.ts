@@ -49,30 +49,19 @@ function buildRow({ table }: BuildRowArgs): string {
   const zodFields = table.columns
     .map((column) => {
       const zodType = columnToZodType(column);
-      const brand = getColumnBranding(column, table.schemaName, table.name);
-      return `  ${column.name}: ${zodType}${brand},`;
+      if (column.isPrimaryKey) {
+        return `  ${column.name}: ${zodType}.brand<"${table.schemaName}.${table.name}">(),`;
+      }
+
+      const nullableText = column.isNullable ? ".nullable()" : "";
+
+      return `  ${column.name}: ${zodType}${nullableText},`;
     })
     .join("\n");
 
   return `export const row = z.object({
 ${zodFields}
 });`;
-}
-
-/**
- * Given a column, returns any Zod branding that needs to be applied.
- * If no branding is needed, will return an empty string.
- */
-function getColumnBranding(
-  column: TableColumn,
-  schemaName: string,
-  tableName: string,
-): string {
-  if (column.isPrimaryKey) {
-    return `.brand<"${schemaName}.${tableName}">()`;
-  }
-
-  return "";
 }
 
 /** Builds the `Row` type. */

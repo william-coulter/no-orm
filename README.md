@@ -1,6 +1,5 @@
 # TODO List:
 
-- Test NULL-ability.
 - Test foreign keys.
 - Test indexes.
 - Test enums, domain, composite, range.

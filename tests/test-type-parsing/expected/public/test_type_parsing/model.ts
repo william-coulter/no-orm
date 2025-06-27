@@ -189,7 +189,50 @@ export async function get({ connection, id }: GetArgs): Promise<Row> {
   return result[0];
 }
 
-type Update = Row;
+export type Update = {
+  a_bigint: bigint;
+  a_bigserial: bigint;
+  a_bit: string;
+  a_varbit: string;
+  a_boolean: boolean;
+  a_box: any;
+  a_bytea: Buffer;
+  a_char: string;
+  a_varchar: string;
+  a_cidr: string;
+  a_circle: any;
+  a_date: string;
+  a_float8: number;
+  a_inet: string;
+  a_int: number;
+  a_interval: any;
+  a_json: z.infer<typeof jsonValue>;
+  a_jsonb: z.infer<typeof jsonValue>;
+  a_line: any;
+  a_lseg: any;
+  a_macaddr: string;
+  a_macaddr8: string;
+  a_money: string;
+  a_numeric: number;
+  a_path: any;
+  a_pg_lsn: string;
+  a_pg_snapshot: string;
+  a_point: any;
+  a_polygon: any;
+  a_real: number;
+  a_smallint: number;
+  a_smallserial: number;
+  a_serial: number;
+  a_text: string;
+  a_time: string;
+  a_timetz: string;
+  a_timestamp: Date;
+  a_timestamptz: Date;
+  a_tsquery: string;
+  a_tsvector: string;
+  a_uuid: string;
+  a_xml: string;
+} & { id: Id };
 
 export type UpdateManyArgs = BaseArgs & { newRows: Update[] };
 

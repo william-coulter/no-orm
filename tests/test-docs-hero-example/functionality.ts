@@ -9,6 +9,7 @@ await pool.connect(async (connection) => {
       name: "Willy the penguin",
       species: "Adélie",
       waddle_speed_kph: 0.5,
+      favourite_snack: null,
       date_of_birth: new Date("2025-01-01T03:00:00+10:00"),
     },
   });
@@ -20,7 +21,7 @@ await pool.connect(async (connection) => {
 
   const update = await PenguinsModel.update({
     connection,
-    newRow: { ...read, waddle_speed_kph: 0.6 },
+    newRow: { ...read, waddle_speed_kph: 0.6, favourite_snack: "Pavlova" },
   });
 
   const _delete = await PenguinsModel.delete({
