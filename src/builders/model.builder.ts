@@ -1,10 +1,11 @@
-import { TableColumn, TableDetails } from "extract-pg-schema";
+import { ColumnReference, TableColumn, TableDetails } from "extract-pg-schema";
 import {
   columnToTypescriptType,
   isDateLike,
   isJsonLike,
   pgTypeToUnnestType,
 } from "./mappers";
+import { getColumnReference, snakeToPascalCase } from "./helpers";
 
 type BuildArgs = {
   table: TableDetails;
@@ -87,6 +88,16 @@ function buildImports({ table }: { table: TableDetails }): string {
     imports.push(`import { jsonValue } from "../../parsers"`);
   }
 
+  const tableReferences: ColumnReference[] = table.columns
+    .map(getColumnReference)
+    .filter((reference) => reference !== null);
+
+  tableReferences.forEach((reference) => {
+    imports.push(
+      `import { type Row as ${snakeToPascalCase(reference.tableName)}Row } from "../${reference.tableName}/table"`,
+    );
+  });
+
   return imports.map((s) => `${s};`).join("\n");
 }
 
@@ -99,6 +110,11 @@ function buildBaseArgsType(): string {
 function buildCreateType({ columns }: { columns: TableColumn[] }): string {
   const createFields = columns.map((col) => {
     const nullableText = col.isNullable ? " | null" : "";
+
+    const columnReference = getColumnReference(col);
+    if (columnReference) {
+      return `${col.name}: ${snakeToPascalCase(columnReference.tableName)}Row["${columnReference.columnName}"]${nullableText}`;
+    }
 
     return `${col.name}: ${columnToTypescriptType(col)}${nullableText}`;
   });
@@ -215,6 +231,10 @@ function buildUpdateType({
 
   const updateFields = updatableColumns.map((col) => {
     const nullableText = col.isNullable ? " | null" : "";
+    const columnReference = getColumnReference(col);
+    if (columnReference) {
+      return `${col.name}: ${snakeToPascalCase(columnReference.tableName)}Row["${columnReference.columnName}"]${nullableText}`;
+    }
 
     return `${col.name}: ${columnToTypescriptType(col)}${nullableText}`;
   });

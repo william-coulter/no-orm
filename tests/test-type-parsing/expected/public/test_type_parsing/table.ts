@@ -3,7 +3,7 @@ import { type ListSqlToken, sql } from "slonik";
 import { jsonValue } from "../../parsers";
 
 export const row = z.object({
-  id: z.number().brand<"public.test_type_parsing">(),
+  id: z.number().brand<"public.test_type_parsing.id">(),
   a_bigint: z.bigint(),
   a_bigserial: z.bigint(),
   a_bit: z.string(),

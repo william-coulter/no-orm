@@ -1,6 +1,5 @@
 # TODO List:
 
-- Test foreign keys.
 - Test indexes.
 - Test enums, domain, composite, range.
 - Test readonly and omitted columns.
