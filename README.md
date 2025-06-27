@@ -1,5 +1,7 @@
 # TODO List:
 
+<!-- STARTHERE: Indexes yay! -->
+
 - Test indexes.
 - Test enums, domain, composite, range.
 - Test readonly and omitted columns.
