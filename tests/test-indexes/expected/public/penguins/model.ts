@@ -149,25 +149,45 @@ async function _delete({ connection, id }: DeleteArgs): Promise<void> {
 export { _delete as delete };
 
 export type GetManyBySpeciesAndDateOfBirth = BaseArgs & {
-  tuples: { species: string; date_of_birth: Date }[];
+  columns: { species: string; date_of_birth: Date }[];
 };
 
 export async function getManyBySpeciesAndDateOfBirth({
   connection,
-  tuples,
+  columns,
 }: GetManyBySpeciesAndDateOfBirth): Promise<readonly Row[]> {
-  const speciesList = tuples.map((t) => t.species);
-  const dobList = tuples.map((t) => t.date_of_birth.toISOString());
+  const tuples = columns.map((col) => [
+    col.species,
+    col.date_of_birth.toISOString(),
+  ]);
 
-  return connection.any(sql.type(row)`
+  const query = sql.type(row)`
     SELECT ${aliasColumns("t")}
     FROM ${tableFragment} AS t
-    JOIN unnest(
-      ${sql.array(speciesList, "text")},
-      ${sql.array(dobList, "timestamptz")}
-    ) AS input(species, date_of_birth)
-    ON input.species = t.species AND input.date_of_birth = t.date_of_birth
-  `);
+    JOIN ${sql.unnest(tuples, [
+      "text",
+      "timestamptz",
+    ])} AS input(species, date_of_birth)
+      ON  input.species = t.species 
+      AND input.date_of_birth = t.date_of_birth`;
+
+  return connection.any(query);
+}
+
+export type GetBySpeciesAndDateOfBirth = BaseArgs & {
+  species: string;
+  date_of_birth: Date;
+};
+
+export async function getBySpeciesAndDateOfBirth({
+  connection,
+  species,
+  date_of_birth,
+}: GetBySpeciesAndDateOfBirth): Promise<readonly Row[]> {
+  return getManyBySpeciesAndDateOfBirth({
+    connection,
+    columns: [{ species, date_of_birth }],
+  });
 }
 
 export type GetManyByNameArgs = BaseArgs & {
@@ -181,8 +201,7 @@ export async function getManyByName({
   return connection.any(sql.type(row)`
     SELECT ${columnsFragment}
     FROM ${tableFragment}
-    WHERE name = ANY(${sql.array(name, "text")})
-  `);
+    WHERE name = ANY(${sql.array(name, "text")})`);
 }
 
 export type GetByNameArgs = BaseArgs & {
@@ -193,7 +212,6 @@ export async function getByName({
   connection,
   name,
 }: GetByNameArgs): Promise<Row | null> {
-  // TODO: Ensure if unique and not a FK / branded type, we do this.
   const result = await getManyByName({ connection, name: [name] });
   return result[0] ?? null;
 }

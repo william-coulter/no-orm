@@ -1,6 +1,7 @@
 import { TableColumn } from "extract-pg-schema";
 
 import * as logger from "../logger";
+import { getColumnReference, snakeToPascalCase } from "./helpers";
 
 /** Converts a Postgres table column into a Zod schema type that can be added to a Zod object schema. */
 export function columnToZodType(column: TableColumn): string {
@@ -17,9 +18,17 @@ export function columnToZodType(column: TableColumn): string {
 }
 
 /** Converts a Postgres table column into a Typescript type. */
+// STARTHERE: Update `columnToZodType` to also handle foreign keys.
 export function columnToTypescriptType(column: TableColumn): string {
+  const nullableText = column.isNullable ? " | null" : "";
+
+  const columnReference = getColumnReference(column);
+  if (columnReference) {
+    return `${snakeToPascalCase(columnReference.tableName)}Row["${columnReference.columnName}"]${nullableText}`;
+  }
+
   if (column.type.kind === "base") {
-    return mapColumnBaseTypeToTypescriptType(column);
+    return `${mapColumnBaseTypeToTypescriptType(column)}${nullableText}`;
   }
 
   logger.warn(`Could not map column to a Typescript type, defaulting to 'any'. 

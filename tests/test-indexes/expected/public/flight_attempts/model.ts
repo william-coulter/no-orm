@@ -167,34 +167,17 @@ export async function getManyByPenguin({
   return connection.any(sql.type(row)`
     SELECT ${columnsFragment}
     FROM ${tableFragment}
-    WHERE penguin = ANY(${sql.array(penguin, "int4")})
-  `);
+    WHERE penguin = ANY(${sql.array(penguin, "int4")})`);
 }
 
-type GetByPenguinArgs = BaseArgs & { penguin: PenguinsRow["id"] };
+export type GetByPenguinArgs = BaseArgs & {
+  penguin: PenguinsRow["id"];
+};
 
 export async function getByPenguin({
   connection,
   penguin,
-  // TODO: Ensure this only return 1 row if UNIQUE. This should never be null since it's a branded type.
 }: GetByPenguinArgs): Promise<readonly Row[]> {
-  return getManyByPenguin({ connection, penguin: [penguin] });
-}
-
-export type GetManyByFailureReasonArgs = BaseArgs & {
-  failure_reason: string[];
-};
-
-export async function getManyByFailureReason({
-  connection,
-  failure_reason,
-  // TODO: Ensure this is not a branded type and not unique, therefore we do not have a `getByFailureReason` method.
-}: GetManyByFailureReasonArgs): Promise<readonly Row[]> {
-  return connection.any(sql.type(row)`
-    SELECT ${columnsFragment}
-    FROM ${tableFragment}
-    WHERE failure_reason = ANY(${sql.array(failure_reason, "text")})
-      -- TODO: Will this be really tricky?
-      AND failure_reason IS NOT NULL
-  `);
+  const result = await getManyByPenguin({ connection, penguin: [penguin] });
+  return result;
 }

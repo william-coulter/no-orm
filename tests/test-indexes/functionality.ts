@@ -53,7 +53,7 @@ await pool.connect(async (connection) => {
   const getManyBySpeciesAndDateOfBirthResult =
     await PenguinsModel.getManyBySpeciesAndDateOfBirth({
       connection,
-      tuples: [
+      columns: [
         {
           species: "Adélie",
           date_of_birth: new Date("2025-01-01T00:00:00+10:00"),
@@ -120,11 +120,6 @@ await pool.connect(async (connection) => {
   await FlightAttemptsModel.getByPenguin({
     connection,
     penguin: penguinCreate1.id,
-  });
-
-  await FlightAttemptsModel.getManyByFailureReason({
-    connection,
-    failure_reason: ["Ski boots were too tight."],
   });
 });
 

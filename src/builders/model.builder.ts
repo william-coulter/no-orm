@@ -1,4 +1,10 @@
-import { ColumnReference, TableColumn, TableDetails } from "extract-pg-schema";
+import {
+  ColumnReference,
+  TableColumn,
+  TableDetails,
+  TableIndex,
+  TableIndexColumn,
+} from "extract-pg-schema";
 import {
   columnToTypescriptType,
   isDateLike,
@@ -57,6 +63,8 @@ ${buildDeleteManyFunction({ table })}
 ${buildDeleteArgsType()}
 
 ${buildDeleteFunction()}
+
+${buildIndexFunctions({ table })}
 `;
 }
 
@@ -108,16 +116,9 @@ function buildBaseArgsType(): string {
 
 /** Builds the `Create` type. */
 function buildCreateType({ columns }: { columns: TableColumn[] }): string {
-  const createFields = columns.map((col) => {
-    const nullableText = col.isNullable ? " | null" : "";
-
-    const columnReference = getColumnReference(col);
-    if (columnReference) {
-      return `${col.name}: ${snakeToPascalCase(columnReference.tableName)}Row["${columnReference.columnName}"]${nullableText}`;
-    }
-
-    return `${col.name}: ${columnToTypescriptType(col)}${nullableText}`;
-  });
+  const createFields = columns.map(
+    (col) => `${col.name}: ${columnToTypescriptType(col)}`,
+  );
 
   return `export type Create = { ${createFields.map((s) => `${s};`).join("\n")} };`;
 }
@@ -229,15 +230,9 @@ function buildUpdateType({
 }): string {
   const primaryKey = getPrimaryKey(table);
 
-  const updateFields = updatableColumns.map((col) => {
-    const nullableText = col.isNullable ? " | null" : "";
-    const columnReference = getColumnReference(col);
-    if (columnReference) {
-      return `${col.name}: ${snakeToPascalCase(columnReference.tableName)}Row["${columnReference.columnName}"]${nullableText}`;
-    }
-
-    return `${col.name}: ${columnToTypescriptType(col)}${nullableText}`;
-  });
+  const updateFields = updatableColumns.map(
+    (col) => `${col.name}: ${columnToTypescriptType(col)}`,
+  );
 
   return `export type Update = { ${updateFields.map((s) => `${s};`).join("\n")} } & { ${primaryKey.name}: Id };`;
 }
@@ -348,6 +343,125 @@ function buildDeleteFunction(): string {
 export { _delete as delete };`;
 }
 
+/** Builds functions generated from indexes on the table. */
+function buildIndexFunctions({ table }: { table: TableDetails }): string {
+  return (
+    table.indices
+      // Ignore primary key indexes since we generate this earlier as the standard CRUD.
+      .filter((index) => !index.isPrimary)
+      // For now, let's ignore any indexes with a functional column component (e.g LOWER(col)).
+      .filter((index) => index.columns.every((col) => !!col.name))
+      // For now, let's ignore any indexes with a predicate (e.g WHERE col IS NOT NULL).
+      .filter((index) => index.columns.every((col) => !col.predicate))
+      .map((index) => buildIndexFunction({ index, table }))
+      .join("\n\n")
+  );
+}
+
+function buildIndexFunction({
+  index,
+  table,
+}: {
+  index: TableIndex;
+  table: TableDetails;
+}): string {
+  const isSingleColumnIndex = index.columns.length === 1;
+
+  if (isSingleColumnIndex) {
+    const indexColumn: TableIndexColumnNonFunctionalNoPredicate = index
+      .columns[0] as TableIndexColumnNonFunctionalNoPredicate;
+
+    const tableColumn: TableColumn | undefined = table.columns.find(
+      (c) => c.name === indexColumn.name,
+    );
+
+    if (!tableColumn) {
+      throw new NoTableColumnForIndex(table, index);
+    }
+
+    return buildSingleColumnIndexFunction({
+      index,
+      indexColumn,
+      tableColumn,
+    });
+  }
+
+  console.log("entire index", JSON.stringify(index, null, 2));
+
+  index.columns.forEach((col) => {
+    console.log("index column predicate", col.predicate);
+    console.log("index column definition", col.definition);
+  });
+
+  return `// TODO: implement multi-column index builder.`;
+}
+
+// The `name` will always be defined on a non-functional column.
+type TableIndexColumnNonFunctional = TableIndexColumn & { name: string };
+type TableIndexColumnNoPredicate = TableIndexColumn & { predicate: null };
+type TableIndexColumnNonFunctionalNoPredicate = TableIndexColumnNonFunctional &
+  TableIndexColumnNoPredicate;
+
+function buildSingleColumnIndexFunction({
+  index,
+  indexColumn,
+  tableColumn,
+}: {
+  index: TableIndex;
+  indexColumn: TableIndexColumnNonFunctionalNoPredicate;
+  tableColumn: TableColumn;
+}): string {
+  const columnName = tableColumn.name;
+  const columnNamePascalCase = snakeToPascalCase(indexColumn.name);
+  const columnTypescriptType = columnToTypescriptType(tableColumn);
+
+  const getManyArgsName = `GetManyBy${columnNamePascalCase}Args`;
+  const getManyArgs = `export type ${getManyArgsName} = BaseArgs & {
+    ${indexColumn.name}: ${columnTypescriptType}[];
+  }`;
+
+  const getManyFunctionName = `getManyBy${columnNamePascalCase}`;
+  const getManyFunction = `export async function ${getManyFunctionName}({
+    connection,
+    ${columnName},
+  }: ${getManyArgsName}): Promise<readonly Row[]> {
+  return connection.any(sql.type(row)\`
+    SELECT \${columnsFragment}
+    FROM \${tableFragment}
+    WHERE ${columnName} = ANY(\${sql.array(${columnName}, "${pgTypeToUnnestType(tableColumn)}")})\`);
+  }`;
+
+  const getArgsName = `GetBy${columnNamePascalCase}Args`;
+  const getArgs = `export type ${getArgsName} = BaseArgs & {
+    ${columnName}: ${columnTypescriptType};
+  }`;
+
+  const getFunctionName = `getBy${columnNamePascalCase}`;
+  const getFunctionReturnType = index.isUnique
+    ? `Row | null`
+    : `readonly Row[]`;
+  const getFunctionReturnStatement = index.isUnique
+    ? `result[0] ?? null`
+    : `result`;
+
+  const getFunction = `export async function ${getFunctionName}({
+    connection,
+    ${columnName},
+  }: ${getArgsName}): Promise<${getFunctionReturnType}> {
+    const result = await ${getManyFunctionName}({ connection, ${columnName}: [${columnName}] });
+    return ${getFunctionReturnStatement};
+  }`;
+
+  return `
+  ${getManyArgs}
+
+  ${getManyFunction}
+
+  ${getArgs}
+
+  ${getFunction}`;
+}
+
 function getPrimaryKey(table: TableDetails): TableColumn {
   const primaryKey = table.columns.find((col) => col.isPrimaryKey);
   if (!primaryKey) {
@@ -359,5 +473,13 @@ function getPrimaryKey(table: TableDetails): TableColumn {
 class NoPrimaryKeyError extends Error {
   constructor(table: TableDetails) {
     super(`Table ${table.name} has no primary key`);
+  }
+}
+
+class NoTableColumnForIndex extends Error {
+  constructor(table: TableDetails, index: TableIndex) {
+    super(
+      `Could not find table column for index '${index.name}' and table '${table.schemaName}.${table.name}'`,
+    );
   }
 }
