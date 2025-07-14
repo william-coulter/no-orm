@@ -19,6 +19,7 @@ export function columnToZodType(column: TableColumn): string {
 
 /** Converts a Postgres table column into a Typescript type. */
 // STARTHERE: Update `columnToZodType` to also handle foreign keys.
+// See how it's used in the `buildRow` function - also just handle whether it's a primary key?
 export function columnToTypescriptType(column: TableColumn): string {
   const nullableText = column.isNullable ? " | null" : "";
 
