@@ -422,6 +422,7 @@ function buildSingleColumnIndexFunction({
   }`;
 
   const getManyFunctionName = `getManyBy${columnNamePascalCase}`;
+  // FIXME: Need to handle DateLike and JsonLike types! See above.
   const getManyFunction = `export async function ${getManyFunctionName}({
     connection,
     ${columnName},
