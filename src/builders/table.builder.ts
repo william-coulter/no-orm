@@ -50,16 +50,7 @@ function buildRow({ table }: BuildRowArgs): string {
   const zodFields = table.columns
     .map((column) => {
       const zodType = columnToZodType(column);
-      const nullableText = column.isNullable ? ".nullable()" : "";
-      const columnReference = getColumnReference(column);
-
-      if (column.isPrimaryKey) {
-        return `${column.name}: ${zodType}.brand<"${table.schemaName}.${table.name}.${column.name}">(),`;
-      } else if (columnReference) {
-        return `${column.name}: ${zodType}.brand<"${columnReference.schemaName}.${columnReference.tableName}.${columnReference.columnName}">()${nullableText},`;
-      }
-
-      return `${column.name}: ${zodType}${nullableText},`;
+      return `${column.name}: ${zodType},`;
     })
     .join("\n");
 

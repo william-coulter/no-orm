@@ -6,7 +6,18 @@ import { getColumnReference, snakeToPascalCase } from "./helpers";
 /** Converts a Postgres table column into a Zod schema type that can be added to a Zod object schema. */
 export function columnToZodType(column: TableColumn): string {
   if (column.type.kind === "base") {
-    return mapColumnBaseTypeToZodType(column);
+    const zodType = mapColumnBaseTypeToZodType(column);
+    const nullableText = column.isNullable ? ".nullable()" : "";
+    const columnReference = getColumnReference(column);
+
+    if (column.isPrimaryKey) {
+      const { table_schema, table_name } = column.informationSchemaValue;
+      return `${zodType}.brand<"${table_schema}.${table_name}.${column.name}">()`;
+    } else if (columnReference) {
+      return `${zodType}.brand<"${columnReference.schemaName}.${columnReference.tableName}.${columnReference.columnName}">()${nullableText}`;
+    }
+
+    return `${zodType}${nullableText}`;
   }
 
   logger.warn(`Could not map column to a zod type, defaulting to 'z.any()'. 
@@ -18,8 +29,6 @@ export function columnToZodType(column: TableColumn): string {
 }
 
 /** Converts a Postgres table column into a Typescript type. */
-// STARTHERE: Update `columnToZodType` to also handle foreign keys.
-// See how it's used in the `buildRow` function - also just handle whether it's a primary key?
 export function columnToTypescriptType(column: TableColumn): string {
   const nullableText = column.isNullable ? " | null" : "";
 
