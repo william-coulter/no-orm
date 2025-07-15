@@ -416,6 +416,7 @@ function buildSingleColumnIndexFunction({
   const columnTypescriptType = columnToTypescriptType(tableColumn);
 
   const getManyArgsName = `GetManyBy${columnNamePascalCase}Args`;
+  // FIXME: Make me `indexColumn.name_list` rather than singular.
   const getManyArgs = `export type ${getManyArgsName} = BaseArgs & {
     ${indexColumn.name}: ${columnTypescriptType}[];
   }`;
