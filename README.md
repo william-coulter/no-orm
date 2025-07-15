@@ -1,6 +1,7 @@
 # TODO List:
 
 - Test indexes.
+- Add `*Map` functions.
 - Test enums, domain, composite, range.
 - Test readonly and omitted columns.
 - Add logger (warn on unknown types, add loading spinner).
