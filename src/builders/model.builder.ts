@@ -480,6 +480,9 @@ function buildSingleColumnIndexFunction({
   ${getFunction}`;
 }
 
+// STARTHERE: Clean me up to match more what you did with the single index function.
+// Then go and look at the FIXMEs of the single index function.
+// Then run all of your tests again (there will probably be some failures).
 function buildMultiColumnIndexFunction({
   index,
   tableColumnMap,
