@@ -149,7 +149,10 @@ async function _delete({ connection, id }: DeleteArgs): Promise<void> {
 export { _delete as delete };
 
 export type GetManyBySpeciesAndDateOfBirth = BaseArgs & {
-  columns: { species: string; date_of_birth: Date }[];
+  columns: {
+    species: string;
+    date_of_birth: Date;
+  }[];
 };
 
 export async function getManyBySpeciesAndDateOfBirth({
@@ -168,7 +171,7 @@ export async function getManyBySpeciesAndDateOfBirth({
       "text",
       "timestamptz",
     ])} AS input(species, date_of_birth)
-      ON  input.species = t.species 
+      ON  input.species = t.species
       AND input.date_of_birth = t.date_of_birth`;
 
   return connection.any(query);
@@ -186,7 +189,12 @@ export async function getBySpeciesAndDateOfBirth({
 }: GetBySpeciesAndDateOfBirth): Promise<readonly Row[]> {
   return getManyBySpeciesAndDateOfBirth({
     connection,
-    columns: [{ species, date_of_birth }],
+    columns: [
+      {
+        species,
+        date_of_birth,
+      },
+    ],
   });
 }
 

@@ -384,16 +384,32 @@ function buildIndexFunction({
       indexColumn,
       tableColumn,
     });
+  } else {
+    const tableColumnMap = new Map<
+      TableIndexColumnNonFunctionalNoPredicate,
+      TableColumn
+    >(
+      index.columns.map((indexColumn) => {
+        const tableColumn: TableColumn | undefined = table.columns.find(
+          (c) => c.name === indexColumn.name,
+        );
+
+        if (!tableColumn) {
+          throw new NoTableColumnForIndex(table, index);
+        }
+
+        return [
+          indexColumn as TableIndexColumnNonFunctionalNoPredicate,
+          tableColumn,
+        ];
+      }),
+    );
+
+    return buildMultiColumnIndexFunction({
+      index,
+      tableColumnMap,
+    });
   }
-
-  console.log("entire index", JSON.stringify(index, null, 2));
-
-  index.columns.forEach((col) => {
-    console.log("index column predicate", col.predicate);
-    console.log("index column definition", col.definition);
-  });
-
-  return `// TODO: implement multi-column index builder.`;
 }
 
 // The `name` will always be defined on a non-functional column.
@@ -462,6 +478,118 @@ function buildSingleColumnIndexFunction({
   ${getArgs}
 
   ${getFunction}`;
+}
+
+function buildMultiColumnIndexFunction({
+  index,
+  tableColumnMap,
+}: {
+  index: TableIndex;
+  tableColumnMap: Map<TableIndexColumnNonFunctionalNoPredicate, TableColumn>;
+}): string {
+  const columns = Array.from(tableColumnMap.entries()).map(
+    ([indexCol, tableCol]) => ({
+      indexCol,
+      tableCol,
+    }),
+  );
+
+  const pascalCaseParts = columns.map(({ indexCol }) =>
+    snakeToPascalCase(indexCol.name),
+  );
+  const pascalCaseName = pascalCaseParts.join("And");
+
+  const getManyArgsName = `GetManyBy${pascalCaseName}`;
+  const getArgsName = `GetBy${pascalCaseName}`;
+  const getManyFunctionName = `getManyBy${pascalCaseName}`;
+  const getFunctionName = `getBy${pascalCaseName}`;
+
+  const columnsFields = columns
+    .map(
+      ({ indexCol, tableCol }) =>
+        `  ${indexCol.name}: ${columnToTypescriptType(tableCol)};`,
+    )
+    .join("\n");
+
+  const getManyArgs = `export type ${getManyArgsName} = BaseArgs & {
+    columns: {
+      ${columnsFields}
+    }[];
+  };`;
+
+  const unnestTypes = columns
+    .map(({ tableCol }) => `"${pgTypeToUnnestType(tableCol)}"`)
+    .join(",\n");
+  const inputColumnNames = columns
+    .map(({ indexCol }) => indexCol.name)
+    .join(", ");
+
+  const mapTupleElements = columns
+    .map(({ indexCol, tableCol }) => {
+      if (isDateLike(tableCol)) {
+        return `col.${indexCol.name}.toISOString()`;
+      } else if (isJsonLike(tableCol)) {
+        return `JSON.stringify(col.${indexCol.name})`;
+      } else {
+        return `col.${indexCol.name}`;
+      }
+    })
+    .join(", ");
+
+  const joinConditions = columns
+    .map(({ indexCol }) => `input.${indexCol.name} = t.${indexCol.name}`)
+    .join("\n      AND ");
+
+  const getManyFunction = `export async function ${getManyFunctionName}({
+  connection,
+  columns,
+}: ${getManyArgsName}): Promise<readonly Row[]> {
+  const tuples = columns.map((col) => [${mapTupleElements}]);
+
+  const query = sql.type(row)\`
+    SELECT \${aliasColumns("t")}
+    FROM \${tableFragment} AS t
+    JOIN \${sql.unnest(tuples, [${unnestTypes}])} AS input(${inputColumnNames})
+      ON  ${joinConditions}\`;
+
+  return connection.any(query);
+};`;
+
+  const singleArgsFields = columns
+    .map(
+      ({ indexCol, tableCol }) =>
+        `${indexCol.name}: ${columnToTypescriptType(tableCol)};`,
+    )
+    .join("\n");
+
+  const getArgs = `export type ${getArgsName} = BaseArgs & {
+    ${singleArgsFields}
+  };`;
+
+  const passArgsObject = columns
+    .map(({ indexCol }) => `${indexCol.name}`)
+    .join(", ");
+
+  const getFunction = `export async function ${getFunctionName}({
+    connection,
+    ${passArgsObject}
+  }: ${getArgsName}): Promise<readonly Row[]> {
+    return ${getManyFunctionName}({
+      connection,
+      columns: [{
+        ${passArgsObject}
+      }],
+    });
+  };`;
+
+  return `
+${getManyArgs}
+
+${getManyFunction}
+
+${getArgs}
+
+${getFunction}`.trim();
 }
 
 function getPrimaryKey(table: TableDetails): TableColumn {
