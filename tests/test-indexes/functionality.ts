@@ -82,7 +82,7 @@ await pool.connect(async (connection) => {
 
   await PenguinsModel.getManyByName({
     connection,
-    name: [penguinCreate1.name],
+    name_list: [penguinCreate1.name],
   });
 
   await PenguinsModel.getByName({
@@ -114,7 +114,7 @@ await pool.connect(async (connection) => {
 
   await FlightAttemptsModel.getManyByPenguin({
     connection,
-    penguin: [penguinCreate1.id],
+    penguin_list: [penguinCreate1.id],
   });
 
   await FlightAttemptsModel.getByPenguin({

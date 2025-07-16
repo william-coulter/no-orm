@@ -422,25 +422,34 @@ function buildSingleColumnIndexFunction({
   tableColumn: TableColumn;
 }): string {
   const columnName = tableColumn.name;
-  const columnNamePascalCase = snakeToPascalCase(indexColumn.name);
+  const columnNamePascalCase = snakeToPascalCase(columnName);
   const columnTypescriptType = columnToTypescriptType(tableColumn);
 
   const getManyArgsName = `GetManyBy${columnNamePascalCase}Args`;
-  // FIXME: Make me `indexColumn.name_list` rather than singular.
+  const getManyArgumentName = `${columnName}_list`;
   const getManyArgs = `export type ${getManyArgsName} = BaseArgs & {
-    ${indexColumn.name}: ${columnTypescriptType}[];
+    ${getManyArgumentName}: ${columnTypescriptType}[];
   }`;
+  const getManyParsedListMapping = () => {
+    if (isDateLike(tableColumn)) {
+      return `${columnName}.toISOString()`;
+    } else if (isJsonLike(tableColumn)) {
+      return `JSON.stringify(${columnName})`;
+    } else {
+      return `${columnName}`;
+    }
+  };
 
   const getManyFunctionName = `getManyBy${columnNamePascalCase}`;
-  // FIXME: Need to handle DateLike and JsonLike types! See above.
   const getManyFunction = `export async function ${getManyFunctionName}({
     connection,
-    ${columnName},
+    ${getManyArgumentName},
   }: ${getManyArgsName}): Promise<readonly Row[]> {
+  const parsedList = ${getManyArgumentName}.map((${columnName}) => ${getManyParsedListMapping()});
   return connection.any(sql.type(row)\`
     SELECT \${columnsFragment}
     FROM \${tableFragment}
-    WHERE ${columnName} = ANY(\${sql.array(${columnName}, "${pgTypeToUnnestType(tableColumn)}")})\`);
+    WHERE ${columnName} = ANY(\${sql.array(parsedList, "${pgTypeToUnnestType(tableColumn)}")})\`);
   }`;
 
   const getArgsName = `GetBy${columnNamePascalCase}Args`;
@@ -460,7 +469,7 @@ function buildSingleColumnIndexFunction({
     connection,
     ${columnName},
   }: ${getArgsName}): Promise<${getFunctionReturnType}> {
-    const result = await ${getManyFunctionName}({ connection, ${columnName}: [${columnName}] });
+    const result = await ${getManyFunctionName}({ connection, ${getManyArgumentName}: [${columnName}] });
     return ${getFunctionReturnStatement};
   }`;
 
