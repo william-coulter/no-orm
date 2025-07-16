@@ -385,29 +385,23 @@ function buildIndexFunction({
       tableColumn,
     });
   } else {
-    const tableColumnMap = new Map<
-      TableIndexColumnNonFunctionalNoPredicate,
-      TableColumn
-    >(
-      index.columns.map((indexColumn) => {
-        const tableColumn: TableColumn | undefined = table.columns.find(
-          (c) => c.name === indexColumn.name,
-        );
+    const columnPairs = index.columns.map((indexColumn) => {
+      const tableColumn: TableColumn | undefined = table.columns.find(
+        (c) => c.name === indexColumn.name,
+      );
 
-        if (!tableColumn) {
-          throw new NoTableColumnForIndex(table, index);
-        }
+      if (!tableColumn) {
+        throw new NoTableColumnForIndex(table, index);
+      }
 
-        return [
-          indexColumn as TableIndexColumnNonFunctionalNoPredicate,
-          tableColumn,
-        ];
-      }),
-    );
+      return {
+        indexColumn: indexColumn as TableIndexColumnNonFunctionalNoPredicate,
+        tableColumn,
+      };
+    });
 
     return buildMultiColumnIndexFunction({
-      index,
-      tableColumnMap,
+      columns: columnPairs,
     });
   }
 }
@@ -480,24 +474,15 @@ function buildSingleColumnIndexFunction({
   ${getFunction}`;
 }
 
-// STARTHERE: Clean me up to match more what you did with the single index function.
-// Then go and look at the FIXMEs of the single index function.
-// Then run all of your tests again (there will probably be some failures).
 function buildMultiColumnIndexFunction({
-  index,
-  tableColumnMap,
+  columns,
 }: {
-  index: TableIndex;
-  tableColumnMap: Map<TableIndexColumnNonFunctionalNoPredicate, TableColumn>;
+  columns: {
+    indexColumn: TableIndexColumnNonFunctionalNoPredicate;
+    tableColumn: TableColumn;
+  }[];
 }): string {
-  const columns = Array.from(tableColumnMap.entries()).map(
-    ([indexCol, tableCol]) => ({
-      indexCol,
-      tableCol,
-    }),
-  );
-
-  const pascalCaseParts = columns.map(({ indexCol }) =>
+  const pascalCaseParts = columns.map(({ indexColumn: indexCol }) =>
     snakeToPascalCase(indexCol.name),
   );
   const pascalCaseName = pascalCaseParts.join("And");
@@ -507,28 +492,26 @@ function buildMultiColumnIndexFunction({
   const getManyFunctionName = `getManyBy${pascalCaseName}`;
   const getFunctionName = `getBy${pascalCaseName}`;
 
-  const columnsFields = columns
-    .map(
-      ({ indexCol, tableCol }) =>
-        `  ${indexCol.name}: ${columnToTypescriptType(tableCol)};`,
-    )
-    .join("\n");
+  const getManyArgsFields = columns.map(
+    ({ indexColumn: indexCol, tableColumn: tableCol }) =>
+      `${indexCol.name}: ${columnToTypescriptType(tableCol)};`,
+  );
 
   const getManyArgs = `export type ${getManyArgsName} = BaseArgs & {
     columns: {
-      ${columnsFields}
+      ${getManyArgsFields.join("\n")}
     }[];
   };`;
 
-  const unnestTypes = columns
-    .map(({ tableCol }) => `"${pgTypeToUnnestType(tableCol)}"`)
-    .join(",\n");
+  const unnestTypes = columns.map(
+    ({ tableColumn: tableCol }) => `"${pgTypeToUnnestType(tableCol)}"`,
+  );
   const inputColumnNames = columns
-    .map(({ indexCol }) => indexCol.name)
+    .map(({ indexColumn: indexCol }) => indexCol.name)
     .join(", ");
 
   const mapTupleElements = columns
-    .map(({ indexCol, tableCol }) => {
+    .map(({ indexColumn: indexCol, tableColumn: tableCol }) => {
       if (isDateLike(tableCol)) {
         return `col.${indexCol.name}.toISOString()`;
       } else if (isJsonLike(tableCol)) {
@@ -539,10 +522,10 @@ function buildMultiColumnIndexFunction({
     })
     .join(", ");
 
-  const joinConditions = columns
-    .map(({ indexCol }) => `input.${indexCol.name} = t.${indexCol.name}`)
-    .join("\n      AND ");
-
+  const joinConditions = columns.map(
+    ({ indexColumn: indexCol }) =>
+      `input.${indexCol.name} = t.${indexCol.name}`,
+  );
   const getManyFunction = `export async function ${getManyFunctionName}({
   connection,
   columns,
@@ -552,15 +535,17 @@ function buildMultiColumnIndexFunction({
   const query = sql.type(row)\`
     SELECT \${aliasColumns("t")}
     FROM \${tableFragment} AS t
-    JOIN \${sql.unnest(tuples, [${unnestTypes}])} AS input(${inputColumnNames})
-      ON  ${joinConditions}\`;
+    JOIN \${sql.unnest(tuples, [
+      ${unnestTypes.join(",\n")}
+    ])} AS input(${inputColumnNames})
+      ON  ${joinConditions.join("\n      AND ")}\`;
 
   return connection.any(query);
 };`;
 
   const singleArgsFields = columns
     .map(
-      ({ indexCol, tableCol }) =>
+      ({ indexColumn: indexCol, tableColumn: tableCol }) =>
         `${indexCol.name}: ${columnToTypescriptType(tableCol)};`,
     )
     .join("\n");
@@ -570,7 +555,7 @@ function buildMultiColumnIndexFunction({
   };`;
 
   const passArgsObject = columns
-    .map(({ indexCol }) => `${indexCol.name}`)
+    .map(({ indexColumn: indexCol }) => `${indexCol.name}`)
     .join(", ");
 
   const getFunction = `export async function ${getFunctionName}({
