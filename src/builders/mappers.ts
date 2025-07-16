@@ -1,31 +1,43 @@
 import { TableColumn } from "extract-pg-schema";
 
 import * as logger from "../logger";
-import { getColumnReference, snakeToPascalCase } from "./helpers";
+import {
+  getColumnReference,
+  snakeToCamelCase,
+  snakeToPascalCase,
+} from "./helpers";
 
 /** Converts a Postgres table column into a Zod schema type that can be added to a Zod object schema. */
 export function columnToZodType(column: TableColumn): string {
-  if (column.type.kind === "base") {
-    const zodType = mapColumnBaseTypeToZodType(column);
-    const nullableText = column.isNullable ? ".nullable()" : "";
-    const columnReference = getColumnReference(column);
+  switch (column.type.kind) {
+    case "base": {
+      const zodType = mapColumnBaseTypeToZodType(column);
+      const nullableText = column.isNullable ? ".nullable()" : "";
+      const columnReference = getColumnReference(column);
 
-    if (column.isPrimaryKey) {
-      const { table_schema, table_name } = column.informationSchemaValue;
-      return `${zodType}.brand<"${table_schema}.${table_name}.${column.name}">()`;
-    } else if (columnReference) {
-      return `${zodType}.brand<"${columnReference.schemaName}.${columnReference.tableName}.${columnReference.columnName}">()${nullableText}`;
+      if (column.isPrimaryKey) {
+        const { table_schema, table_name } = column.informationSchemaValue;
+        return `${zodType}.brand<"${table_schema}.${table_name}.${column.name}">()`;
+      } else if (columnReference) {
+        return `${zodType}.brand<"${columnReference.schemaName}.${columnReference.tableName}.${columnReference.columnName}">()${nullableText}`;
+      }
+
+      return `${zodType}${nullableText}`;
     }
 
-    return `${zodType}${nullableText}`;
-  }
+    case "enum": {
+      return enumNameToZodSchemaName(column.informationSchemaValue.udt_name);
+    }
 
-  logger.warn(`Could not map column to a zod type, defaulting to 'z.any()'. 
+    default: {
+      logger.warn(`Could not map column to a zod type, defaulting to 'z.any()'. 
   Schema: '${column.informationSchemaValue.table_schema}'.
   Table: '${column.informationSchemaValue.table_name}'.
   Column: '${column.name}'.
   Type: ${JSON.stringify(column.type, null, 2)}`);
-  return "z.any()";
+      return "z.any()";
+    }
+  }
 }
 
 /** Converts a Postgres table column into a Typescript type. */
@@ -280,4 +292,8 @@ export function isJsonLike(column: TableColumn): boolean {
       return false;
     }
   }
+}
+
+export function enumNameToZodSchemaName(enumName: string): string {
+  return `${snakeToCamelCase(enumName)}EnumSchema`;
 }

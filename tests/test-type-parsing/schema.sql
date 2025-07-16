@@ -1,3 +1,8 @@
+CREATE TYPE my_enum AS ENUM (
+  'a_value',
+  'another_value'
+);
+
 CREATE TABLE test_type_parsing (
   id SERIAL PRIMARY KEY,
 

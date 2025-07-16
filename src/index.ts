@@ -7,6 +7,7 @@ import { Command } from "commander";
 import { format, resolveConfig, type Options } from "prettier";
 
 import { noOrmConfigSchema } from "./no-orm.config";
+import * as DomainBuilder from "./builders/domain.builder";
 import * as ParsersBuilder from "./builders/parsers.builder";
 import * as TableBuilder from "./builders/table.builder";
 import * as ModelBuilder from "./builders/model.builder";
@@ -48,16 +49,29 @@ async function run({ configPath }: RunArgs) {
       connectionString: config.postgres_connection_string,
     });
 
-    const schemas = Object.keys(result);
+    const schemaNames = Object.keys(result);
+    for (const schemaName of schemaNames) {
+      const schema = result[schemaName];
 
-    for (const schema of schemas) {
-      const schemaOutputPath = path.join(config.output_directory, schema);
+      const schemaOutputPath = path.join(config.output_directory, schemaName);
       await mkdir(schemaOutputPath, {
         recursive: true,
       });
 
-      const tables = result[schema].tables;
+      const domainContent = await DomainBuilder.build({
+        schema,
+      });
+      const formattedDomainContent = await prettierFormat(
+        domainContent,
+        prettierConfig,
+      );
+      await writeFile(
+        path.join(schemaOutputPath, "domain.ts"),
+        formattedDomainContent,
+        "utf-8",
+      );
 
+      const tables = schema.tables;
       for (const table of tables) {
         const outputPath = path.join(schemaOutputPath, table.name);
         await mkdir(outputPath, {
