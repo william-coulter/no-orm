@@ -3,6 +3,14 @@ CREATE TYPE my_enum AS ENUM (
   'another_value'
 );
 
+CREATE DOMAIN TEXT_SHORT AS TEXT
+CONSTRAINT check_length
+  CHECK (LENGTH(value) <= 255);
+
+CREATE DOMAIN TEXT_LONG AS TEXT
+  CONSTRAINT check_length
+  CHECK (LENGTH(value) <= 4095);
+
 CREATE TABLE test_type_parsing (
   id SERIAL PRIMARY KEY,
 
@@ -47,5 +55,9 @@ CREATE TABLE test_type_parsing (
   a_tsquery TSQUERY NOT NULL,
   a_tsvector TSVECTOR NOT NULL,
   a_uuid UUID NOT NULL,
-  a_xml XML NOT NULL
+  a_xml XML NOT NULL,
+
+  a_enum my_enum NOT NULL,
+  a_text_short text_short NOT NULL,
+  a_text_long text_long NOT NULL
 );
