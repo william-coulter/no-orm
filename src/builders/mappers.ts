@@ -9,10 +9,11 @@ import {
 
 /** Converts a Postgres table column into a Zod schema type that can be added to a Zod object schema. */
 export function columnToZodType(column: TableColumn): string {
+  const nullableText = column.isNullable ? ".nullable()" : "";
+
   switch (column.type.kind) {
     case "base": {
       const zodType = mapColumnBaseTypeToZodType(column);
-      const nullableText = column.isNullable ? ".nullable()" : "";
       const columnReference = getColumnReference(column);
 
       if (column.isPrimaryKey) {
@@ -26,7 +27,7 @@ export function columnToZodType(column: TableColumn): string {
     }
 
     case "enum": {
-      return enumNameToZodSchemaName(column.informationSchemaValue.udt_name);
+      return `${enumNameToZodSchemaName(column.informationSchemaValue.udt_name)}${nullableText}`;
     }
 
     default: {
