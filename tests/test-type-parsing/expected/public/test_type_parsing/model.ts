@@ -9,6 +9,7 @@ import {
 } from "./table";
 import { z } from "zod";
 import { jsonValue } from "../../parsers";
+import { MyEnumEnum } from "../domain";
 
 type BaseArgs = { connection: CommonQueryMethods };
 
@@ -55,6 +56,7 @@ export type Create = {
   a_tsvector: string;
   a_uuid: string;
   a_xml: string;
+  a_enum: MyEnumEnum;
 };
 
 export type CreateManyArgs = BaseArgs & { shapes: Create[] };
@@ -106,6 +108,7 @@ export async function createMany({
     shape.a_tsvector,
     shape.a_uuid,
     shape.a_xml,
+    shape.a_enum,
   ]);
 
   const query = sql.type(row)`
@@ -151,11 +154,12 @@ export async function createMany({
       a_tsquery,
       a_tsvector,
       a_uuid,
-      a_xml
+      a_xml,
+      a_enum
     )
-    SELECT a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml
-    FROM ${sql.unnest(tuples, ["int8", "int8", "bit", "varbit", "bool", "box", "bytea", "bpchar", "varchar", "cidr", "circle", "date", "float8", "inet", "int4", "interval", "json", "jsonb", "line", "lseg", "macaddr", "macaddr8", "money", "numeric", "path", "pg_lsn", "pg_snapshot", "point", "polygon", "float4", "int2", "int2", "int4", "text", "time", "timetz", "timestamp", "timestamptz", "tsquery", "tsvector", "uuid", "xml"])}
-      AS input(a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml)
+    SELECT a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum
+    FROM ${sql.unnest(tuples, ["int8", "int8", "bit", "varbit", "bool", "box", "bytea", "bpchar", "varchar", "cidr", "circle", "date", "float8", "inet", "int4", "interval", "json", "jsonb", "line", "lseg", "macaddr", "macaddr8", "money", "numeric", "path", "pg_lsn", "pg_snapshot", "point", "polygon", "float4", "int2", "int2", "int4", "text", "time", "timetz", "timestamp", "timestamptz", "tsquery", "tsvector", "uuid", "xml", "my_enum"])}
+      AS input(a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum)
     RETURNING ${columnsFragment}`;
 
   return connection.any(query);
@@ -232,6 +236,7 @@ export type Update = {
   a_tsvector: string;
   a_uuid: string;
   a_xml: string;
+  a_enum: MyEnumEnum;
 } & { id: Id };
 
 export type UpdateManyArgs = BaseArgs & { newRows: Update[] };
@@ -284,6 +289,7 @@ export function updateMany({
     newRow.a_tsvector,
     newRow.a_uuid,
     newRow.a_xml,
+    newRow.a_enum,
   ]);
 
   const query = sql.type(row)`
@@ -329,7 +335,8 @@ export function updateMany({
       a_tsquery = input.a_tsquery,
       a_tsvector = input.a_tsvector,
       a_uuid = input.a_uuid,
-      a_xml = input.a_xml
+      a_xml = input.a_xml,
+      a_enum = input.a_enum
     FROM ${sql.unnest(tuples, [
       "int4",
       "int8",
@@ -374,7 +381,8 @@ export function updateMany({
       "tsvector",
       "uuid",
       "xml",
-    ])} AS input(id, a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml)
+      "my_enum",
+    ])} AS input(id, a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum)
     WHERE t.id = input.id
     RETURNING ${aliasColumns("t")}`;
 

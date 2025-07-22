@@ -48,6 +48,7 @@ await pool.connect(async (connection) => {
       a_tsvector: "'hello':1 'world':2",
       a_uuid: "123e4567-e89b-12d3-a456-426614174000",
       a_xml: "<root><item>Value</item></root>",
+      a_enum: "a_value",
     },
   });
 
@@ -102,6 +103,7 @@ await pool.connect(async (connection) => {
       a_tsvector: "'updated':1 'content':2",
       a_uuid: "321e6547-b98e-21d3-b654-526614174111",
       a_xml: "<updated><item>Changed</item></updated>",
+      a_enum: "another_value",
     },
   });
 

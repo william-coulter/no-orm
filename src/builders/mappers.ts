@@ -1,4 +1,4 @@
-import { TableColumn } from "extract-pg-schema";
+import { EnumDetails, TableColumn } from "extract-pg-schema";
 
 import * as logger from "../logger";
 import {
@@ -6,39 +6,39 @@ import {
   snakeToCamelCase,
   snakeToPascalCase,
 } from "./helpers";
+import {
+  BaseColumn,
+  EnumColumn,
+  isBaseColumn,
+  isEnumColumn,
+} from "./column-types";
 
 /** Converts a Postgres table column into a Zod schema type that can be added to a Zod object schema. */
 export function columnToZodType(column: TableColumn): string {
   const nullableText = column.isNullable ? ".nullable()" : "";
 
-  switch (column.type.kind) {
-    case "base": {
-      const zodType = mapColumnBaseTypeToZodType(column);
-      const columnReference = getColumnReference(column);
+  if (isBaseColumn(column)) {
+    const zodType = mapColumnBaseTypeToZodType(column);
+    const columnReference = getColumnReference(column);
 
-      if (column.isPrimaryKey) {
-        const { table_schema, table_name } = column.informationSchemaValue;
-        return `${zodType}.brand<"${table_schema}.${table_name}.${column.name}">()`;
-      } else if (columnReference) {
-        return `${zodType}.brand<"${columnReference.schemaName}.${columnReference.tableName}.${columnReference.columnName}">()${nullableText}`;
-      }
-
-      return `${zodType}${nullableText}`;
+    if (column.isPrimaryKey) {
+      const { table_schema, table_name } = column.informationSchemaValue;
+      return `${zodType}.brand<"${table_schema}.${table_name}.${column.name}">()`;
+    } else if (columnReference) {
+      return `${zodType}.brand<"${columnReference.schemaName}.${columnReference.tableName}.${columnReference.columnName}">()${nullableText}`;
     }
 
-    case "enum": {
-      return `${enumNameToZodSchemaName(column.informationSchemaValue.udt_name)}${nullableText}`;
-    }
+    return `${zodType}${nullableText}`;
+  } else if (isEnumColumn(column)) {
+    return `${enumColumnToZodSchemaName(column)}${nullableText}`;
+  }
 
-    default: {
-      logger.warn(`Could not map column to a zod type, defaulting to 'z.any()'. 
+  logger.warn(`Could not map column to a zod type, defaulting to 'z.any()'. 
   Schema: '${column.informationSchemaValue.table_schema}'.
   Table: '${column.informationSchemaValue.table_name}'.
   Column: '${column.name}'.
   Type: ${JSON.stringify(column.type, null, 2)}`);
-      return "z.any()";
-    }
-  }
+  return "z.any()";
 }
 
 /** Converts a Postgres table column into a Typescript type. */
@@ -50,8 +50,10 @@ export function columnToTypescriptType(column: TableColumn): string {
     return `${snakeToPascalCase(columnReference.tableName)}Row["${columnReference.columnName}"]${nullableText}`;
   }
 
-  if (column.type.kind === "base") {
+  if (isBaseColumn(column)) {
     return `${mapColumnBaseTypeToTypescriptType(column)}${nullableText}`;
+  } else if (isEnumColumn(column)) {
+    return `${enumColumnToTypescriptType(column)}${nullableText}`;
   }
 
   logger.warn(`Could not map column to a Typescript type, defaulting to 'any'. 
@@ -68,8 +70,10 @@ export function columnToTypescriptType(column: TableColumn): string {
  * E.g `pg_catalog.int4` -> `int4`, `pg_catalog.timestamptz` -> `timestamptz` etc.
  */
 export function pgTypeToUnnestType(column: TableColumn): string {
-  if (column.type.kind === "base") {
+  if (isBaseColumn(column)) {
     return column.type.fullName.replace("pg_catalog.", "");
+  } else if (isEnumColumn(column)) {
+    return column.informationSchemaValue.udt_name;
   }
 
   logger.warn(`Could not map column to a unnest type, defaulting to "text". 
@@ -81,7 +85,7 @@ export function pgTypeToUnnestType(column: TableColumn): string {
 }
 
 /** Given a column of kind `base` will return zod type. */
-function mapColumnBaseTypeToZodType(column: TableColumn): string {
+function mapColumnBaseTypeToZodType(column: BaseColumn): string {
   switch (column.type.fullName) {
     case "pg_catalog.int2":
     case "pg_catalog.int4":
@@ -171,7 +175,7 @@ function mapColumnBaseTypeToZodType(column: TableColumn): string {
 }
 
 /** Given a column of kind `base` will return a Typescript type. */
-function mapColumnBaseTypeToTypescriptType(column: TableColumn): string {
+function mapColumnBaseTypeToTypescriptType(column: BaseColumn): string {
   switch (column.type.fullName) {
     case "pg_catalog.int2":
     case "pg_catalog.int4":
@@ -295,6 +299,14 @@ export function isJsonLike(column: TableColumn): boolean {
   }
 }
 
-export function enumNameToZodSchemaName(enumName: string): string {
-  return `${snakeToCamelCase(enumName)}EnumSchema`;
+export function enumColumnToZodSchemaName(column: EnumColumn): string {
+  return `${snakeToCamelCase(column.informationSchemaValue.udt_name)}EnumSchema`;
+}
+
+export function enumColumnToTypescriptType(column: EnumColumn): string {
+  return `${snakeToPascalCase(column.informationSchemaValue.udt_name)}Enum`;
+}
+
+export function enumDetailsToZodSchemaName(details: EnumDetails): string {
+  return `${snakeToCamelCase(details.name)}EnumSchema`;
 }

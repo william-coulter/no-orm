@@ -1,10 +1,11 @@
 import { TableDetails } from "extract-pg-schema";
 import {
   columnToZodType,
-  enumNameToZodSchemaName,
+  enumColumnToZodSchemaName,
   isJsonLike,
 } from "./mappers";
 import { getColumnReference } from "./helpers";
+import { EnumColumn, isEnumColumn } from "./column-types";
 
 type BuildArgs = {
   table: TableDetails;
@@ -43,15 +44,9 @@ function buildImports({ table }: { table: TableDetails }): string {
     imports.push(`import { jsonValue } from "../../parsers"`);
   }
 
-  const enums = table.columns
-    .map((column) => {
-      if (column.type.kind === "enum") {
-        return column.informationSchemaValue.udt_name;
-      }
-    })
-    .filter((s): s is string => !!s);
+  const enums = table.columns.filter(isEnumColumn);
   if (enums.length > 0) {
-    const enumZodSchemas = enums.map((e) => enumNameToZodSchemaName(e));
+    const enumZodSchemas = enums.map((e) => enumColumnToZodSchemaName(e));
     imports.push(`import { ${enumZodSchemas.join(",")} } from "../domain"`);
   }
 

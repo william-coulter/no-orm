@@ -1,6 +1,6 @@
 import { EnumDetails, Schema } from "extract-pg-schema";
-import { snakeToCamelCase, snakeToPascalCase } from "./helpers";
-import { enumNameToZodSchemaName } from "./mappers";
+import { snakeToPascalCase } from "./helpers";
+import { enumDetailsToZodSchemaName } from "./mappers";
 
 type BuildArgs = {
   schema: Schema;
@@ -24,7 +24,7 @@ function buildImports(): string {
 
 function buildEnum(enumDetails: EnumDetails): string {
   const enumName = enumDetails.name;
-  const enumZodSchemaName = enumNameToZodSchemaName(enumName);
+  const enumZodSchemaName = enumDetailsToZodSchemaName(enumDetails);
   const literals = enumDetails.values.map((v) => `z.literal("${v}")`);
 
   const enumVariable = `export const ${enumZodSchemaName} = z.union([

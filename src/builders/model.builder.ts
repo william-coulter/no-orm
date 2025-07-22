@@ -7,11 +7,13 @@ import {
 } from "extract-pg-schema";
 import {
   columnToTypescriptType,
+  enumColumnToTypescriptType,
   isDateLike,
   isJsonLike,
   pgTypeToUnnestType,
 } from "./mappers";
 import { getColumnReference, snakeToPascalCase } from "./helpers";
+import { isEnumColumn } from "./column-types";
 
 type BuildArgs = {
   table: TableDetails;
@@ -105,6 +107,12 @@ function buildImports({ table }: { table: TableDetails }): string {
       `import { type Row as ${snakeToPascalCase(reference.tableName)}Row } from "../${reference.tableName}/table"`,
     );
   });
+
+  const enums = table.columns.filter(isEnumColumn);
+  if (enums.length > 0) {
+    const enumZodSchemas = enums.map((e) => enumColumnToTypescriptType(e));
+    imports.push(`import { ${enumZodSchemas.join(",")} } from "../domain"`);
+  }
 
   return imports.map((s) => `${s};`).join("\n");
 }
