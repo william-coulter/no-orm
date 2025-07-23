@@ -1,6 +1,7 @@
 import { DomainDetails, Schema } from "extract-pg-schema";
 import { snakeToPascalCase, snakeToCamelCase } from "./helpers";
 import { mapPostgresTypeToZodType } from "./mappers";
+import { DomainColumn } from "./column-types";
 
 type BuildArgs = {
   schema: Schema;
@@ -53,4 +54,12 @@ export function domainDetailsToZodSchemaName(details: DomainDetails): string {
 
 export function domainDetailsToTypescriptType(details: DomainDetails): string {
   return `${snakeToPascalCase(details.name)}`;
+}
+
+export function domainColumnToZodSchemaName(column: DomainColumn): string {
+  return `Domains.Schemas.${snakeToCamelCase(column.informationSchemaValue.domain_name!)}`;
+}
+
+export function domainColumnToTypescriptType(column: DomainColumn): string {
+  return `Domains.Types.${snakeToPascalCase(column.informationSchemaValue.domain_name!)}`;
 }

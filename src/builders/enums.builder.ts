@@ -55,7 +55,7 @@ export function enumDetailsToTypescriptType(details: EnumDetails): string {
 }
 
 export function enumColumnToZodSchemaName(column: EnumColumn): string {
-  return `Enums.Schema.${snakeToCamelCase(column.informationSchemaValue.udt_name)}`;
+  return `Enums.Schemas.${snakeToCamelCase(column.informationSchemaValue.udt_name)}`;
 }
 
 export function enumColumnToTypescriptType(column: EnumColumn): string {

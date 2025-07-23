@@ -12,6 +12,10 @@ import {
   enumColumnToTypescriptType,
   enumColumnToZodSchemaName,
 } from "./enums.builder";
+import {
+  domainColumnToTypescriptType,
+  domainColumnToZodSchemaName,
+} from "./domains.builder";
 
 /** Converts a Postgres table column into a Zod schema type that can be added to a Zod object schema. */
 export function columnToZodType(column: TableColumn): string {
@@ -31,6 +35,8 @@ export function columnToZodType(column: TableColumn): string {
     return `${zodType}${nullableText}`;
   } else if (isEnumColumn(column)) {
     return `${enumColumnToZodSchemaName(column)}${nullableText}`;
+  } else if (isDomainColumn(column)) {
+    return `${domainColumnToZodSchemaName(column)}${nullableText}`;
   }
 
   logger.warn(`Could not map column to a zod type, defaulting to 'z.any()'. 
@@ -54,6 +60,8 @@ export function columnToTypescriptType(column: TableColumn): string {
     return `${mapColumnBaseTypeToTypescriptType(column)}${nullableText}`;
   } else if (isEnumColumn(column)) {
     return `${enumColumnToTypescriptType(column)}${nullableText}`;
+  } else if (isDomainColumn(column)) {
+    return `${domainColumnToTypescriptType(column)}${nullableText}`;
   }
 
   logger.warn(`Could not map column to a Typescript type, defaulting to 'any'. 
@@ -74,6 +82,8 @@ export function pgTypeToUnnestType(column: TableColumn): string {
     return column.type.fullName.replace("pg_catalog.", "");
   } else if (isEnumColumn(column)) {
     return column.informationSchemaValue.udt_name;
+  } else if (isDomainColumn(column)) {
+    return column.informationSchemaValue.domain_name!;
   }
 
   logger.warn(`Could not map column to a unnest type, defaulting to "text". 
