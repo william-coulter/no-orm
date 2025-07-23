@@ -1,17 +1,17 @@
-import { EnumDetails, TableColumn } from "extract-pg-schema";
+import { TableColumn } from "extract-pg-schema";
 
 import * as logger from "../logger";
-import {
-  getColumnReference,
-  snakeToCamelCase,
-  snakeToPascalCase,
-} from "./helpers";
+import { getColumnReference, snakeToPascalCase } from "./helpers";
 import {
   BaseColumn,
-  EnumColumn,
   isBaseColumn,
+  isDomainColumn,
   isEnumColumn,
 } from "./column-types";
+import {
+  enumColumnToTypescriptType,
+  enumColumnToZodSchemaName,
+} from "./enums.builder";
 
 /** Converts a Postgres table column into a Zod schema type that can be added to a Zod object schema. */
 export function columnToZodType(column: TableColumn): string {
@@ -295,16 +295,4 @@ export function isJsonLike(column: TableColumn): boolean {
       return false;
     }
   }
-}
-
-export function enumColumnToZodSchemaName(column: EnumColumn): string {
-  return `${snakeToCamelCase(column.informationSchemaValue.udt_name)}EnumSchema`;
-}
-
-export function enumColumnToTypescriptType(column: EnumColumn): string {
-  return `${snakeToPascalCase(column.informationSchemaValue.udt_name)}Enum`;
-}
-
-export function enumDetailsToZodSchemaName(details: EnumDetails): string {
-  return `${snakeToCamelCase(details.name)}EnumSchema`;
 }

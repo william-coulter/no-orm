@@ -1,11 +1,6 @@
 import { TableDetails } from "extract-pg-schema";
-import {
-  columnToZodType,
-  enumColumnToZodSchemaName,
-  isJsonLike,
-} from "./mappers";
-import { getColumnReference } from "./helpers";
-import { EnumColumn, isEnumColumn } from "./column-types";
+import { columnToZodType, isJsonLike } from "./mappers";
+import { isDomainColumn, isEnumColumn } from "./column-types";
 
 type BuildArgs = {
   table: TableDetails;
@@ -32,7 +27,6 @@ ${buildAliasColumns()}
 
 /** Builds the Typescript imports required for the file. */
 function buildImports({ table }: { table: TableDetails }): string {
-  // import { myEnumEnumSchema } from "../domain";
   const DEFAULT_IMPORTS: string[] = [
     `import { z } from "zod"`,
     `import { type ListSqlToken, sql } from "slonik"`,
@@ -46,8 +40,12 @@ function buildImports({ table }: { table: TableDetails }): string {
 
   const enums = table.columns.filter(isEnumColumn);
   if (enums.length > 0) {
-    const enumZodSchemas = enums.map((e) => enumColumnToZodSchemaName(e));
-    imports.push(`import { ${enumZodSchemas.join(",")} } from "../domain"`);
+    imports.push(`import * as Enums from "../enums"`);
+  }
+
+  const domains = table.columns.filter(isDomainColumn);
+  if (domains.length > 0) {
+    imports.push(`import * as Domains from "../domains"`);
   }
 
   return imports.map((s) => `${s};`).join("\n");

@@ -7,8 +7,9 @@ import { Command } from "commander";
 import { format, resolveConfig, type Options } from "prettier";
 
 import { noOrmConfigSchema } from "./no-orm.config";
-import * as DomainsBuilder from "./builders/domains.builder";
 import * as ParsersBuilder from "./builders/parsers.builder";
+import * as EnumsBuilder from "./builders/enums.builder";
+import * as DomainsBuilder from "./builders/domains.builder";
 import * as TableBuilder from "./builders/table.builder";
 import * as ModelBuilder from "./builders/model.builder";
 
@@ -58,16 +59,29 @@ async function run({ configPath }: RunArgs) {
         recursive: true,
       });
 
+      const enumsContent = await EnumsBuilder.build({
+        schema,
+      });
+      const formattedEnumsContent = await prettierFormat(
+        enumsContent,
+        prettierConfig,
+      );
+      await writeFile(
+        path.join(schemaOutputPath, "enums.ts"),
+        formattedEnumsContent,
+        "utf-8",
+      );
+
       const domainsContent = await DomainsBuilder.build({
         schema,
       });
-      const formattedDomainContent = await prettierFormat(
+      const formattedDomainsContent = await prettierFormat(
         domainsContent,
         prettierConfig,
       );
       await writeFile(
         path.join(schemaOutputPath, "domains.ts"),
-        formattedDomainContent,
+        formattedDomainsContent,
         "utf-8",
       );
 
