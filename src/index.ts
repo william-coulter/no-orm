@@ -7,7 +7,7 @@ import { Command } from "commander";
 import { format, resolveConfig, type Options } from "prettier";
 
 import { noOrmConfigSchema } from "./no-orm.config";
-import * as DomainBuilder from "./builders/domain.builder";
+import * as DomainsBuilder from "./builders/domains.builder";
 import * as ParsersBuilder from "./builders/parsers.builder";
 import * as TableBuilder from "./builders/table.builder";
 import * as ModelBuilder from "./builders/model.builder";
@@ -58,15 +58,15 @@ async function run({ configPath }: RunArgs) {
         recursive: true,
       });
 
-      const domainContent = await DomainBuilder.build({
+      const domainsContent = await DomainsBuilder.build({
         schema,
       });
       const formattedDomainContent = await prettierFormat(
-        domainContent,
+        domainsContent,
         prettierConfig,
       );
       await writeFile(
-        path.join(schemaOutputPath, "domain.ts"),
+        path.join(schemaOutputPath, "domains.ts"),
         formattedDomainContent,
         "utf-8",
       );

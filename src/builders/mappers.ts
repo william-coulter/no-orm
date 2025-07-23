@@ -18,7 +18,7 @@ export function columnToZodType(column: TableColumn): string {
   const nullableText = column.isNullable ? ".nullable()" : "";
 
   if (isBaseColumn(column)) {
-    const zodType = mapColumnBaseTypeToZodType(column);
+    const zodType = mapPostgresTypeToZodType(column.type.fullName);
     const columnReference = getColumnReference(column);
 
     if (column.isPrimaryKey) {
@@ -84,9 +84,9 @@ export function pgTypeToUnnestType(column: TableColumn): string {
   return "text";
 }
 
-/** Given a column of kind `base` will return zod type. */
-function mapColumnBaseTypeToZodType(column: BaseColumn): string {
-  switch (column.type.fullName) {
+/** Given a postgres type (e.g `pg_catalog.int2`) will return zod type. */
+export function mapPostgresTypeToZodType(postgresType: string): string {
+  switch (postgresType) {
     case "pg_catalog.int2":
     case "pg_catalog.int4":
     case "pg_catalog.float4":
@@ -164,11 +164,9 @@ function mapColumnBaseTypeToZodType(column: BaseColumn): string {
       return "z.string()";
     }
     default: {
-      logger.warn(`Could not map column to a zod type, defaulting to 'z.any()'. 
-      Schema: '${column.informationSchemaValue.table_schema}'.
-      Table: '${column.informationSchemaValue.table_name}'.
-      Column: '${column.name}'.
-      Type: ${JSON.stringify(column.type, null, 2)}`);
+      logger.warn(
+        `Could not map postgres type '${postgresType}' to a zod type, defaulting to 'z.any()'.`,
+      );
       return "z.any()";
     }
   }
