@@ -54,5 +54,7 @@ CREATE TABLE test_type_parsing (
   a_xml XML NOT NULL,
 
   a_enum my_enum NOT NULL,
-  a_text_short text_short NOT NULL
+  a_text_short text_short NOT NULL,
+  -- STARTHERE: How do I do this?
+  a_date_range DATERANGE NOT NULL
 );
