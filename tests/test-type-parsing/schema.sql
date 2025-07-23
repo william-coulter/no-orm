@@ -3,7 +3,7 @@ CREATE TYPE my_enum AS ENUM (
   'another_value'
 );
 
-CREATE DOMAIN TEXT_SHORT AS TEXT
+CREATE DOMAIN text_short AS TEXT
 CONSTRAINT check_length
   CHECK (LENGTH(value) <= 255);
 
