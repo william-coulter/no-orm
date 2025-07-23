@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { type ListSqlToken, sql } from "slonik";
 import { jsonValue } from "../../parsers";
-import { myEnumEnumSchema } from "../domain";
+import * as Enums from "../enums";
+import * as Domains from "../domains";
 
 export const row = z.object({
   id: z.number().brand<"public.test_type_parsing.id">(),
@@ -47,7 +48,8 @@ export const row = z.object({
   a_tsvector: z.string(),
   a_uuid: z.string(),
   a_xml: z.string(),
-  a_enum: myEnumEnumSchema,
+  a_enum: Enums.Schemas.myEnum,
+  a_text_short: Domains.Schemas.textShort,
 });
 
 export type Row = z.infer<typeof row>;

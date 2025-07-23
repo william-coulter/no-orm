@@ -12,8 +12,6 @@ export async function build({ schema }: BuildArgs): Promise<string> {
   const enums = schema.enums.map(buildEnum);
 
   const domain = schema.domains;
-  // STARTHERE: Check me out and work out what to do!
-  // Maybe start with what the expected functionality is. I can't really see anything in Slonik about handling these explicitly.
   console.log(domain);
 
   return `${imports}

@@ -1,5 +1,7 @@
 /** Tests that the functions from `model` execute without errors against the DB. */
+import { z } from "zod";
 import { pool } from "../slonik-test-connection";
+import * as Domains from "./expected/public/domains";
 import * as TestModel from "./expected/public/test_type_parsing/model";
 
 await pool.connect(async (connection) => {
@@ -49,6 +51,7 @@ await pool.connect(async (connection) => {
       a_uuid: "123e4567-e89b-12d3-a456-426614174000",
       a_xml: "<root><item>Value</item></root>",
       a_enum: "a_value",
+      a_text_short: parseTextShortDomain("a_text_short"),
     },
   });
 
@@ -104,6 +107,7 @@ await pool.connect(async (connection) => {
       a_uuid: "321e6547-b98e-21d3-b654-526614174111",
       a_xml: "<updated><item>Changed</item></updated>",
       a_enum: "another_value",
+      a_text_short: parseTextShortDomain("another_text_short"),
     },
   });
 
@@ -114,3 +118,10 @@ await pool.connect(async (connection) => {
 });
 
 process.exit(0);
+
+// User-defined parser for the domain.
+function parseTextShortDomain(value: string): Domains.Types.TextShort {
+  const parser = z.string().max(255);
+  const validated = parser.parse(value);
+  return Domains.Schemas.textShort.parse(validated);
+}
