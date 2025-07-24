@@ -52,6 +52,7 @@ await pool.connect(async (connection) => {
       a_xml: "<root><item>Value</item></root>",
       a_enum: "a_value",
       a_text_short: parseTextShortDomain("a_text_short"),
+      a_float_range: "[1.0,5.0)",
     },
   });
 
@@ -59,6 +60,8 @@ await pool.connect(async (connection) => {
     connection,
     id: create.id,
   });
+
+  console.log(read.a_float_range);
 
   const update = await TestModel.update({
     connection,
@@ -108,6 +111,7 @@ await pool.connect(async (connection) => {
       a_xml: "<updated><item>Changed</item></updated>",
       a_enum: "another_value",
       a_text_short: parseTextShortDomain("another_text_short"),
+      a_float_range: "[2.0,5.0)",
     },
   });
 

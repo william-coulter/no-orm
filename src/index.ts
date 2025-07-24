@@ -10,6 +10,7 @@ import { noOrmConfigSchema } from "./no-orm.config";
 import * as ParsersBuilder from "./builders/parsers.builder";
 import * as EnumsBuilder from "./builders/enums.builder";
 import * as DomainsBuilder from "./builders/domains.builder";
+import * as RangesBuilder from "./builders/ranges.builder";
 import * as TableBuilder from "./builders/table.builder";
 import * as ModelBuilder from "./builders/model.builder";
 
@@ -82,6 +83,19 @@ async function run({ configPath }: RunArgs) {
       await writeFile(
         path.join(schemaOutputPath, "domains.ts"),
         formattedDomainsContent,
+        "utf-8",
+      );
+
+      const rangesContent = await RangesBuilder.build({
+        schema,
+      });
+      const formattedRangesContent = await prettierFormat(
+        rangesContent,
+        prettierConfig,
+      );
+      await writeFile(
+        path.join(schemaOutputPath, "ranges.ts"),
+        formattedRangesContent,
         "utf-8",
       );
 

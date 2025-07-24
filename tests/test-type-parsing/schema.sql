@@ -7,6 +7,11 @@ CREATE DOMAIN text_short AS TEXT
 CONSTRAINT check_length
   CHECK (LENGTH(value) <= 255);
 
+CREATE TYPE float_range AS RANGE (
+    subtype = float8,
+    subtype_diff = float8mi
+);
+
 CREATE TABLE test_type_parsing (
   id SERIAL PRIMARY KEY,
 
@@ -52,9 +57,10 @@ CREATE TABLE test_type_parsing (
   a_tsvector TSVECTOR NOT NULL,
   a_uuid UUID NOT NULL,
   a_xml XML NOT NULL,
+  -- TODO: Also handle `https://www.postgresql.org/docs/current/rangetypes.html#RANGETYPES-BUILTIN`...
+  -- These are types of `kind` = `range` but they don't appear in `schema.ranges`... I guess because they are native to Postgres?
 
   a_enum my_enum NOT NULL,
   a_text_short text_short NOT NULL,
-  -- STARTHERE: How do I do this?
-  a_date_range DATERANGE NOT NULL
+  a_float_range float_range NOT NULL
 );

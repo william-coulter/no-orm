@@ -50,6 +50,7 @@ export const row = z.object({
   a_xml: z.string(),
   a_enum: Enums.Schemas.myEnum,
   a_text_short: Domains.Schemas.textShort,
+  a_float_range: z.string(),
 });
 
 export type Row = z.infer<typeof row>;
