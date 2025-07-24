@@ -208,3 +208,4 @@ A list of behaviours from various ORMs that we think are heinous and should not 
 - No foreign table support.
 - No automatic support for indexes with predicates (e.g `WHERE x IS NOT NULL`). This is because I need some way to convert the predicate into a Typescript type. Not worth it.
 - No automatic support for functional indexes (e.g `LOWER(x)`).
+- Assumed schema isolation: user-defined objects in schema "a" are not used in schema "b".
