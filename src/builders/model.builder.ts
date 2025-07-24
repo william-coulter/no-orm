@@ -363,6 +363,7 @@ function buildIndexFunctions({ table }: { table: TableDetails }): string {
       // For now, let's ignore any indexes with a functional column component (e.g LOWER(col)).
       .filter((index) => index.columns.every((col) => !!col.name))
       // For now, let's ignore any indexes with a predicate (e.g WHERE col IS NOT NULL).
+      // TODO: `enums` and `domains` are probably ok... But what about `range` and `composite`?
       .filter((index) => index.columns.every((col) => !col.predicate))
       .map((index) => buildIndexFunction({ index, table }))
       .join("\n\n")
