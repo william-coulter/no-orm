@@ -1,6 +1,6 @@
-import { DomainDetails, RangeDetails, Schema } from "extract-pg-schema";
-import { snakeToPascalCase, snakeToCamelCase } from "./helpers";
-import { DomainColumn } from "./column-types";
+import { RangeDetails, Schema } from "extract-pg-schema";
+import { snakeToCamelCase, snakeToPascalCase } from "./helpers";
+import { isCustomRangeColumn, RangeColumn } from "./column-types";
 
 type BuildArgs = {
   schema: Schema;
@@ -8,8 +8,6 @@ type BuildArgs = {
 
 export async function build({ schema }: BuildArgs): Promise<string> {
   const ranges = schema.ranges;
-
-  console.log(ranges);
 
   return `${buildImports()}
   
@@ -24,28 +22,66 @@ function buildImports(): string {
   return DEFAULT_IMPORTS.map((s) => `${s};`).join("\n");
 }
 
+const BUILT_IN_RANGE_SCHEMA_NAME = "builtInRange";
+const BUILT_IN_RANGE_TYPE_NAME = "BuiltInRange";
+
 function buildSchemaNamespace(ranges: RangeDetails[]): string {
+  const schemas = ranges.map((range) => {
+    const schemaName = rangeDetailsToZodSchemaName(range);
+    const zodType = "z.string()";
+    const brand = `${range.schemaName}.ranges.${range.name}`;
+    return `export const ${schemaName} = ${zodType}.brand<"${brand}">()`;
+  });
+
   return `export namespace Schemas {
+  export const ${BUILT_IN_RANGE_SCHEMA_NAME} = z.string().brand<"pg_catalog.ranges.built_in_range">();
+
+  ${schemas.join(";\n\n")}
 }`;
 }
 
 function buildTypesNamespace(ranges: RangeDetails[]): string {
+  const types = ranges.map((range) => {
+    const typeName = rangeDetailsToTypescriptType(range);
+    const schemaName = rangeDetailsToZodSchemaName(range);
+    return `export type ${typeName} = z.infer<typeof Schemas.${schemaName}>`;
+  });
+
   return `export namespace Types {
+  export type ${BUILT_IN_RANGE_TYPE_NAME} = z.infer<typeof Schemas.${BUILT_IN_RANGE_SCHEMA_NAME}>;
+
+  ${types.join(";\n\n")}
 }`;
 }
 
-export function domainDetailsToZodSchemaName(details: DomainDetails): string {
-  return `${snakeToCamelCase(details.name)}`;
+function isCustomRangeDetails(details: RangeDetails): boolean {
+  return details.schemaName !== "pg_catalog";
 }
 
-export function domainDetailsToTypescriptType(details: DomainDetails): string {
-  return `${snakeToPascalCase(details.name)}`;
+export function rangeDetailsToZodSchemaName(details: RangeDetails): string {
+  return isCustomRangeDetails(details)
+    ? snakeToCamelCase(details.name)
+    : BUILT_IN_RANGE_SCHEMA_NAME;
 }
 
-export function domainColumnToZodSchemaName(column: DomainColumn): string {
-  return `Domains.Schemas.${snakeToCamelCase(column.informationSchemaValue.domain_name!)}`;
+export function rangeDetailsToTypescriptType(details: RangeDetails): string {
+  return isCustomRangeDetails(details)
+    ? snakeToPascalCase(details.name)
+    : BUILT_IN_RANGE_TYPE_NAME;
 }
 
-export function domainColumnToTypescriptType(column: DomainColumn): string {
-  return `Domains.Types.${snakeToPascalCase(column.informationSchemaValue.domain_name!)}`;
+export function rangeColumnToZodSchemaName(column: RangeColumn): string {
+  const schemaName = isCustomRangeColumn(column)
+    ? snakeToCamelCase(column.informationSchemaValue.udt_name)
+    : BUILT_IN_RANGE_SCHEMA_NAME;
+
+  return `Ranges.Schemas.${schemaName}`;
+}
+
+export function rangeColumnToTypescriptType(column: RangeColumn): string {
+  const typeName = isCustomRangeColumn(column)
+    ? snakeToPascalCase(column.informationSchemaValue.udt_name)
+    : BUILT_IN_RANGE_TYPE_NAME;
+
+  return `Ranges.Types.${typeName}`;
 }

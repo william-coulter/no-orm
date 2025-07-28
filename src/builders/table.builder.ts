@@ -1,6 +1,11 @@
 import { TableDetails } from "extract-pg-schema";
 import { columnToZodType, isJsonLike } from "./mappers";
-import { isDomainColumn, isEnumColumn } from "./column-types";
+import {
+  isCustomRangeColumn,
+  isDomainColumn,
+  isEnumColumn,
+  isRangeColumn,
+} from "./column-types";
 
 type BuildArgs = {
   table: TableDetails;
@@ -46,6 +51,13 @@ function buildImports({ table }: { table: TableDetails }): string {
   const domains = table.columns.filter(isDomainColumn);
   if (domains.length > 0) {
     imports.push(`import * as Domains from "../domains"`);
+  }
+
+  const ranges = table.columns.filter(
+    (col) => isRangeColumn(col) && isCustomRangeColumn(col),
+  );
+  if (ranges.length > 0) {
+    imports.push(`import * as Ranges from "../ranges"`);
   }
 
   return imports.map((s) => `${s};`).join("\n");

@@ -57,10 +57,9 @@ CREATE TABLE test_type_parsing (
   a_tsvector TSVECTOR NOT NULL,
   a_uuid UUID NOT NULL,
   a_xml XML NOT NULL,
-  -- TODO: Also handle `https://www.postgresql.org/docs/current/rangetypes.html#RANGETYPES-BUILTIN`...
-  -- These are types of `kind` = `range` but they don't appear in `schema.ranges`... I guess because they are native to Postgres?
 
   a_enum my_enum NOT NULL,
   a_text_short text_short NOT NULL,
-  a_float_range float_range NOT NULL
+  a_float_range float_range NOT NULL,
+  a_timestamp_range tstzrange NOT NULL -- Not a user-defined range.
 );

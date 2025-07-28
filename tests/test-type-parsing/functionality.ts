@@ -2,6 +2,7 @@
 import { z } from "zod";
 import { pool } from "../slonik-test-connection";
 import * as Domains from "./expected/public/domains";
+import * as Ranges from "./expected/public/ranges";
 import * as TestModel from "./expected/public/test_type_parsing/model";
 
 await pool.connect(async (connection) => {
@@ -52,7 +53,11 @@ await pool.connect(async (connection) => {
       a_xml: "<root><item>Value</item></root>",
       a_enum: "a_value",
       a_text_short: parseTextShortDomain("a_text_short"),
-      a_float_range: "[1.0,5.0)",
+      a_float_range: Ranges.Schemas.floatRange.parse("[1.0,5.0)"),
+      // STARTHERE: Slonik returns an object for built-in types...
+      a_timestamp_range: Ranges.Schemas.builtInRange.parse(
+        "[2025-01-01 00:00:00+10,2025-01-02 00:00:00+10)",
+      ),
     },
   });
 
@@ -60,8 +65,6 @@ await pool.connect(async (connection) => {
     connection,
     id: create.id,
   });
-
-  console.log(read.a_float_range);
 
   const update = await TestModel.update({
     connection,
@@ -111,7 +114,10 @@ await pool.connect(async (connection) => {
       a_xml: "<updated><item>Changed</item></updated>",
       a_enum: "another_value",
       a_text_short: parseTextShortDomain("another_text_short"),
-      a_float_range: "[2.0,5.0)",
+      a_float_range: Ranges.Schemas.floatRange.parse("[2.0,5.0)"),
+      a_timestamp_range: Ranges.Schemas.builtInRange.parse(
+        "[2025-01-01 00:00:00+10,2025-05-20 00:00:00+10)",
+      ),
     },
   });
 

@@ -3,6 +3,7 @@ import { type ListSqlToken, sql } from "slonik";
 import { jsonValue } from "../../parsers";
 import * as Enums from "../enums";
 import * as Domains from "../domains";
+import * as Ranges from "../ranges";
 
 export const row = z.object({
   id: z.number().brand<"public.test_type_parsing.id">(),
@@ -50,7 +51,8 @@ export const row = z.object({
   a_xml: z.string(),
   a_enum: Enums.Schemas.myEnum,
   a_text_short: Domains.Schemas.textShort,
-  a_float_range: z.string(),
+  a_float_range: Ranges.Schemas.floatRange,
+  a_timestamp_range: Ranges.Schemas.builtInRange,
 });
 
 export type Row = z.infer<typeof row>;
