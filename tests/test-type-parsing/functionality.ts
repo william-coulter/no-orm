@@ -1,5 +1,6 @@
 /** Tests that the functions from `model` execute without errors against the DB. */
 import { z } from "zod";
+import { Range } from "postgres-range";
 import { pool } from "../slonik-test-connection";
 import * as Domains from "./expected/public/domains";
 import * as Ranges from "./expected/public/ranges";
@@ -54,9 +55,10 @@ await pool.connect(async (connection) => {
       a_enum: "a_value",
       a_text_short: parseTextShortDomain("a_text_short"),
       a_float_range: Ranges.Schemas.floatRange.parse("[1.0,5.0)"),
-      // STARTHERE: Slonik returns an object for built-in types...
-      a_timestamp_range: Ranges.Schemas.builtInRange.parse(
-        "[2025-01-01 00:00:00+10,2025-01-02 00:00:00+10)",
+      a_timestamp_range: new Range<Date>(
+        new Date("2025-01-01 00:00:00+10"),
+        new Date("2025-01-02 00:00:00+10"),
+        4,
       ),
     },
   });
@@ -115,8 +117,10 @@ await pool.connect(async (connection) => {
       a_enum: "another_value",
       a_text_short: parseTextShortDomain("another_text_short"),
       a_float_range: Ranges.Schemas.floatRange.parse("[2.0,5.0)"),
-      a_timestamp_range: Ranges.Schemas.builtInRange.parse(
-        "[2025-01-01 00:00:00+10,2025-05-20 00:00:00+10)",
+      a_timestamp_range: new Range<Date>(
+        new Date("2025-01-01 00:00:00+10"),
+        new Date("2025-05-20 00:00:00+10"),
+        4,
       ),
     },
   });

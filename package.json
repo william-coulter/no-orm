@@ -14,6 +14,7 @@
     "test": "vitest"
   },
   "peerDependencies": {
+    "postgres-range": "^1.1.4",
     "slonik": "^46.4.0",
     "zod": "^3.25.51"
   },
@@ -22,6 +23,7 @@
     "@types/pg": "^8.15.4",
     "execa": "^9.6.0",
     "pg": "^8.16.0",
+    "postgres-range": "^1.1.4",
     "slonik": "46.4.0",
     "testcontainers": "^11.0.0",
     "tsx": "^4.19.4",

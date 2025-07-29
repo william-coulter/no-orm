@@ -8,7 +8,11 @@ import {
   tableFragment,
 } from "./table";
 import { z } from "zod";
-import { jsonValue } from "../../parsers";
+import {
+  jsonValue,
+  TimestampRange,
+  postgresRangeSerializer,
+} from "../../parsers";
 import * as Enums from "../enums";
 import * as Domains from "../domains";
 import * as Ranges from "../ranges";
@@ -61,7 +65,7 @@ export type Create = {
   a_enum: Enums.Types.MyEnum;
   a_text_short: Domains.Types.TextShort;
   a_float_range: Ranges.Types.FloatRange;
-  a_timestamp_range: Ranges.Types.BuiltInRange;
+  a_timestamp_range: TimestampRange;
 };
 
 export type CreateManyArgs = BaseArgs & { shapes: Create[] };
@@ -116,7 +120,7 @@ export async function createMany({
     shape.a_enum,
     shape.a_text_short,
     shape.a_float_range,
-    shape.a_timestamp_range,
+    shape.a_timestamp_range.toPostgres(postgresRangeSerializer),
   ]);
 
   const query = sql.type(row)`
@@ -250,7 +254,7 @@ export type Update = {
   a_enum: Enums.Types.MyEnum;
   a_text_short: Domains.Types.TextShort;
   a_float_range: Ranges.Types.FloatRange;
-  a_timestamp_range: Ranges.Types.BuiltInRange;
+  a_timestamp_range: TimestampRange;
 } & { id: Id };
 
 export type UpdateManyArgs = BaseArgs & { newRows: Update[] };
@@ -306,7 +310,7 @@ export function updateMany({
     newRow.a_enum,
     newRow.a_text_short,
     newRow.a_float_range,
-    newRow.a_timestamp_range,
+    newRow.a_timestamp_range.toPostgres(postgresRangeSerializer),
   ]);
 
   const query = sql.type(row)`

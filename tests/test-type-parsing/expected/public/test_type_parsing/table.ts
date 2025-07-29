@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { type ListSqlToken, sql } from "slonik";
-import { jsonValue } from "../../parsers";
+import { jsonValue, timestampRangeSchema } from "../../parsers";
 import * as Enums from "../enums";
 import * as Domains from "../domains";
 import * as Ranges from "../ranges";
@@ -52,7 +52,7 @@ export const row = z.object({
   a_enum: Enums.Schemas.myEnum,
   a_text_short: Domains.Schemas.textShort,
   a_float_range: Ranges.Schemas.floatRange,
-  a_timestamp_range: Ranges.Schemas.builtInRange,
+  a_timestamp_range: timestampRangeSchema,
 });
 
 export type Row = z.infer<typeof row>;
