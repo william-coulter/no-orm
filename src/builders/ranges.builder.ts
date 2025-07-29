@@ -7,6 +7,7 @@ type BuildArgs = {
 };
 
 export async function build({ schema }: BuildArgs): Promise<string> {
+  // Only user defined ranges are in this `schema.ranges` object.
   const ranges = schema.ranges;
 
   return `${buildImports()}
@@ -54,20 +55,12 @@ function buildTypesNamespace(ranges: RangeDetails[]): string {
 }`;
 }
 
-function isCustomRangeDetails(details: RangeDetails): boolean {
-  return details.schemaName !== "pg_catalog";
-}
-
 export function rangeDetailsToZodSchemaName(details: RangeDetails): string {
-  return isCustomRangeDetails(details)
-    ? snakeToCamelCase(details.name)
-    : BUILT_IN_RANGE_SCHEMA_NAME;
+  return snakeToCamelCase(details.name);
 }
 
 export function rangeDetailsToTypescriptType(details: RangeDetails): string {
-  return isCustomRangeDetails(details)
-    ? snakeToPascalCase(details.name)
-    : BUILT_IN_RANGE_TYPE_NAME;
+  return snakeToPascalCase(details.name);
 }
 
 export function rangeColumnToZodSchemaName(column: RangeColumn): string {
