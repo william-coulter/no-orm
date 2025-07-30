@@ -7,7 +7,7 @@ import { Command } from "commander";
 import { format, resolveConfig, type Options } from "prettier";
 
 import { noOrmConfigSchema } from "./no-orm.config";
-import * as ParsersBuilder from "./builders/parsers.builder";
+import * as PostgresBuilder from "./builders/postgres.builder";
 import * as EnumsBuilder from "./builders/enums.builder";
 import * as DomainsBuilder from "./builders/domains.builder";
 import * as RangesBuilder from "./builders/ranges.builder";
@@ -39,13 +39,13 @@ async function run({ configPath }: RunArgs) {
       recursive: true,
     });
 
-    const parsersPath = path.join(config.output_directory, "parsers.ts");
-    const parsersContent = ParsersBuilder.build();
-    const formattedParsersContent = await prettierFormat(
-      parsersContent,
+    const postgresPath = path.join(config.output_directory, "postgres.ts");
+    const postgresContent = PostgresBuilder.build();
+    const formattedPostgresContent = await prettierFormat(
+      postgresContent,
       prettierConfig,
     );
-    await writeFile(parsersPath, formattedParsersContent, "utf-8");
+    await writeFile(postgresPath, formattedPostgresContent, "utf-8");
 
     const result = await extractSchemas({
       connectionString: config.postgres_connection_string,

@@ -1,11 +1,6 @@
 import { TableDetails } from "extract-pg-schema";
-import { columnToZodType, isJsonLike } from "./mappers";
-import {
-  isCustomRangeColumn,
-  isDomainColumn,
-  isEnumColumn,
-  isRangeColumn,
-} from "./column-types";
+import { columnToZodType, isBuiltInRange, isJsonLike } from "./mappers";
+import { isDomainColumn, isEnumColumn } from "./column-types";
 
 type BuildArgs = {
   table: TableDetails;
@@ -39,8 +34,9 @@ function buildImports({ table }: { table: TableDetails }): string {
   const imports = DEFAULT_IMPORTS;
 
   const containsJsonColumn = table.columns.some(isJsonLike);
-  if (containsJsonColumn) {
-    imports.push(`import { jsonValue } from "../../parsers"`);
+  const containsBuiltInRange = table.columns.some(isBuiltInRange);
+  if (containsJsonColumn || containsBuiltInRange) {
+    imports.push(`import * as Postgres from "../../postgres"`);
   }
 
   const enums = table.columns.filter(isEnumColumn);
@@ -53,9 +49,7 @@ function buildImports({ table }: { table: TableDetails }): string {
     imports.push(`import * as Domains from "../domains"`);
   }
 
-  const ranges = table.columns.filter(
-    (col) => isRangeColumn(col) && isCustomRangeColumn(col),
-  );
+  const ranges = table.columns.filter((col) => !isBuiltInRange(col));
   if (ranges.length > 0) {
     imports.push(`import * as Ranges from "../ranges"`);
   }

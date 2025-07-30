@@ -1,6 +1,6 @@
 import { DomainDetails, Schema } from "extract-pg-schema";
 import { snakeToPascalCase, snakeToCamelCase } from "./helpers";
-import { mapPostgresTypeToZodType } from "./mappers";
+import { mapPostgresTypeToZodSchema } from "./mappers";
 import { DomainColumn } from "./column-types";
 
 type BuildArgs = {
@@ -26,7 +26,7 @@ function buildImports(): string {
 function buildSchemaNamespace(domains: DomainDetails[]): string {
   const schemas = domains.map((domain) => {
     const schemaName = domainDetailsToZodSchemaName(domain);
-    const zodType = mapPostgresTypeToZodType(domain.innerType);
+    const zodType = mapPostgresTypeToZodSchema(domain.innerType);
     const brand = `${domain.schemaName}.domains.${domain.name}`;
     return `export const ${schemaName} = ${zodType}.brand<"${brand}">()`;
   });

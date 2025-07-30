@@ -32,11 +32,6 @@ export function isRangeColumn(column: TableColumn): column is RangeColumn {
   return column.type.kind === "range";
 }
 
-export function isCustomRangeColumn(column: RangeColumn): boolean {
-  // Some range types are built-in to Postgres.
-  return column.informationSchemaValue.udt_schema !== "pg_catalog";
-}
-
 export function isDomainColumn(column: TableColumn): column is DomainColumn {
   return column.type.kind === "domain";
 }

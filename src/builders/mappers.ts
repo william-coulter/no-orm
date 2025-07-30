@@ -3,7 +3,6 @@ import { TableColumn } from "extract-pg-schema";
 import * as logger from "../logger";
 import { getColumnReference, snakeToPascalCase } from "./helpers";
 import {
-  BaseColumn,
   isBaseColumn,
   isDomainColumn,
   isEnumColumn,
@@ -27,7 +26,7 @@ export function columnToZodType(column: TableColumn): string {
   const nullableText = column.isNullable ? ".nullable()" : "";
 
   if (isBaseColumn(column)) {
-    const zodType = mapPostgresTypeToZodType(column.type.fullName);
+    const zodType = mapPostgresTypeToZodSchema(column.type.fullName);
     const columnReference = getColumnReference(column);
 
     if (column.isPrimaryKey) {
@@ -64,7 +63,7 @@ export function columnToTypescriptType(column: TableColumn): string {
   }
 
   if (isBaseColumn(column)) {
-    return `${mapColumnBaseTypeToTypescriptType(column)}${nullableText}`;
+    return `${mapPostgresTypeToTypescriptType(column.type.fullName)}${nullableText}`;
   } else if (isEnumColumn(column)) {
     return `${enumColumnToTypescriptType(column)}${nullableText}`;
   } else if (isDomainColumn(column)) {
@@ -105,8 +104,8 @@ export function pgTypeToUnnestType(column: TableColumn): string {
   return "text";
 }
 
-/** Given a postgres type (e.g `pg_catalog.int2`) will return zod type. */
-export function mapPostgresTypeToZodType(postgresType: string): string {
+/** Given a postgres type (e.g `pg_catalog.int2`) will return zod schema. */
+export function mapPostgresTypeToZodSchema(postgresType: string): string {
   switch (postgresType) {
     case "pg_catalog.int2":
     case "pg_catalog.int4":
@@ -144,7 +143,7 @@ export function mapPostgresTypeToZodType(postgresType: string): string {
     }
     case "pg_catalog.json":
     case "pg_catalog.jsonb": {
-      return "jsonValue";
+      return "Postgres.Schemas.json";
     }
     case "pg_catalog.bit":
     case "pg_catalog.varbit": {
@@ -184,18 +183,36 @@ export function mapPostgresTypeToZodType(postgresType: string): string {
     case "pg_catalog.pg_snapshot": {
       return "z.string()";
     }
+    case "pg_catalog.int4range": {
+      return "Postgres.Schemas.int4range";
+    }
+    case "pg_catalog.int8range": {
+      return "Postgres.Schemas.int8range";
+    }
+    case "pg_catalog.numrange": {
+      return "Postgres.Schemas.numrange";
+    }
+    case "pg_catalog.tsrange": {
+      return "Postgres.Schemas.tsrange";
+    }
+    case "pg_catalog.tstzrange": {
+      return "Postgres.Schemas.tstzrange";
+    }
+    case "pg_catalog.daterange": {
+      return "Postgres.Schemas.daterange";
+    }
     default: {
       logger.warn(
-        `Could not map postgres type '${postgresType}' to a zod type, defaulting to 'z.any()'.`,
+        `Could not map postgres type '${postgresType}' to a zod schema, defaulting to 'z.any()'.`,
       );
       return "z.any()";
     }
   }
 }
 
-/** Given a column of kind `base` will return a Typescript type. */
-function mapColumnBaseTypeToTypescriptType(column: BaseColumn): string {
-  switch (column.type.fullName) {
+/** Given a postgres type (e.g `pg_catalog.int2`) will return zod type. */
+export function mapPostgresTypeToTypescriptType(postgresType: string): string {
+  switch (postgresType) {
     case "pg_catalog.int2":
     case "pg_catalog.int4":
     case "pg_catalog.float4":
@@ -232,7 +249,7 @@ function mapColumnBaseTypeToTypescriptType(column: BaseColumn): string {
     }
     case "pg_catalog.json":
     case "pg_catalog.jsonb": {
-      return "z.infer<typeof jsonValue>";
+      return "Postgres.Types.Json";
     }
     case "pg_catalog.bit":
     case "pg_catalog.varbit": {
@@ -272,18 +289,34 @@ function mapColumnBaseTypeToTypescriptType(column: BaseColumn): string {
     case "pg_catalog.pg_snapshot": {
       return "string";
     }
+    case "pg_catalog.int4range": {
+      return "Postgres.Types.Int4range";
+    }
+    case "pg_catalog.int8range": {
+      return "Postgres.Types.Int8range";
+    }
+    case "pg_catalog.numrange": {
+      return "Postgres.Types.Numrange";
+    }
+    case "pg_catalog.tsrange": {
+      return "Postgres.Types.Tsrange";
+    }
+    case "pg_catalog.tstzrange": {
+      return "Postgres.Types.Tstzrange";
+    }
+    case "pg_catalog.daterange": {
+      return "Postgres.Types.Daterange";
+    }
     default: {
-      logger.warn(`Could not map column to a Typescript type, defaulting to 'any'. 
-  Schema: '${column.informationSchemaValue.table_schema}'.
-  Table: '${column.informationSchemaValue.table_name}'.
-  Column: '${column.name}'.
-  Type: ${JSON.stringify(column.type, null, 2)}`);
+      logger.warn(
+        `Could not map postgres type '${postgresType}' to a Typescript type, defaulting to 'any'.`,
+      );
       return "any";
     }
   }
 }
 
-/** Returns `true` if the columns is a date-like type. */
+/** Returns `true` if the column is a Postgres date-like type. */
 export function isDateLike(column: TableColumn): boolean {
   if (column.type.kind !== "base") {
     return false;
@@ -301,6 +334,7 @@ export function isDateLike(column: TableColumn): boolean {
   }
 }
 
+/** Returns `true` if the column is a Postgres json-like type. */
 export function isJsonLike(column: TableColumn): boolean {
   if (column.type.kind !== "base") {
     return false;
@@ -309,6 +343,28 @@ export function isJsonLike(column: TableColumn): boolean {
   switch (column.type.fullName) {
     case "pg_catalog.json":
     case "pg_catalog.jsonb": {
+      return true;
+    }
+
+    default: {
+      return false;
+    }
+  }
+}
+
+/** Returns `true` if the column is a built in Postgres range. */
+export function isBuiltInRange(column: TableColumn): boolean {
+  if (column.type.kind !== "range") {
+    return false;
+  }
+
+  switch (column.type.fullName) {
+    case "pg_catalog.int4range":
+    case "pg_catalog.int8range":
+    case "pg_catalog.numrange":
+    case "pg_catalog.tsrange":
+    case "pg_catalog.tstzrange":
+    case "pg_catalog.daterange": {
       return true;
     }
 

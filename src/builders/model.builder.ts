@@ -7,17 +7,13 @@ import {
 } from "extract-pg-schema";
 import {
   columnToTypescriptType,
+  isBuiltInRange,
   isDateLike,
   isJsonLike,
   pgTypeToUnnestType,
 } from "./mappers";
 import { getColumnReference, snakeToPascalCase } from "./helpers";
-import {
-  isCustomRangeColumn,
-  isDomainColumn,
-  isEnumColumn,
-  isRangeColumn,
-} from "./column-types";
+import { isDomainColumn, isEnumColumn } from "./column-types";
 
 type BuildArgs = {
   table: TableDetails;
@@ -97,9 +93,9 @@ function buildImports({ table }: { table: TableDetails }): string {
   const imports = DEFAULT_IMPORTS;
 
   const containsJsonColumn = table.columns.some(isJsonLike);
-  if (containsJsonColumn) {
-    imports.push(`import { z } from "zod"`);
-    imports.push(`import { jsonValue } from "../../parsers"`);
+  const containsBuiltInRange = table.columns.some(isBuiltInRange);
+  if (containsJsonColumn || containsBuiltInRange) {
+    imports.push(`import * as Postgres from "../../postgres"`);
   }
 
   const tableReferences: ColumnReference[] = table.columns
@@ -122,9 +118,7 @@ function buildImports({ table }: { table: TableDetails }): string {
     imports.push(`import * as Domains from "../domains"`);
   }
 
-  const ranges = table.columns.filter(
-    (col) => isRangeColumn(col) && isCustomRangeColumn(col),
-  );
+  const ranges = table.columns.filter((col) => !isBuiltInRange(col));
   if (ranges.length > 0) {
     imports.push(`import * as Ranges from "../ranges"`);
   }
@@ -165,6 +159,8 @@ function buildCreateManyFunction({
         return `shape.${col.name}.toISOString()`;
       } else if (isJsonLike(col)) {
         return `JSON.stringify(shape.${col.name})`;
+      } else if (isBuiltInRange(col)) {
+        return `shape.${col.name}.toPostgres(Postgres.Serializers.range)`;
       } else {
         return `shape.${col.name}`;
       }
@@ -282,6 +278,8 @@ function buildUpdateManyFunction({
         return `newRow.${col.name}.toISOString()`;
       } else if (isJsonLike(col)) {
         return `JSON.stringify(newRow.${col.name})`;
+      } else if (isBuiltInRange(col)) {
+        return `newRow.${col.name}.toPostgres(Postgres.Serializers.range)`;
       } else {
         return `newRow.${col.name}`;
       }
@@ -459,6 +457,8 @@ function buildSingleColumnIndexFunction({
       return `${columnName}.toISOString()`;
     } else if (isJsonLike(tableColumn)) {
       return `JSON.stringify(${columnName})`;
+    } else if (isBuiltInRange(tableColumn)) {
+      return `shape.${tableColumn.name}.toPostgres(Postgres.Serializers.range)`;
     } else {
       return `${columnName}`;
     }
@@ -549,6 +549,8 @@ function buildMultiColumnIndexFunction({
         return `col.${indexCol.name}.toISOString()`;
       } else if (isJsonLike(tableCol)) {
         return `JSON.stringify(col.${indexCol.name})`;
+      } else if (isBuiltInRange(tableCol)) {
+        return `shape.${indexCol.name}.toPostgres(Postgres.Serializers.range)`;
       } else {
         return `col.${indexCol.name}`;
       }

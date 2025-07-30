@@ -7,12 +7,7 @@ import {
   row,
   tableFragment,
 } from "./table";
-import { z } from "zod";
-import {
-  jsonValue,
-  TimestampRange,
-  postgresRangeSerializer,
-} from "../../parsers";
+import * as Postgres from "../../postgres";
 import * as Enums from "../enums";
 import * as Domains from "../domains";
 import * as Ranges from "../ranges";
@@ -36,8 +31,8 @@ export type Create = {
   a_inet: string;
   a_int: number;
   a_interval: any;
-  a_json: z.infer<typeof jsonValue>;
-  a_jsonb: z.infer<typeof jsonValue>;
+  a_json: Postgres.Types.Json;
+  a_jsonb: Postgres.Types.Json;
   a_line: any;
   a_lseg: any;
   a_macaddr: string;
@@ -65,7 +60,7 @@ export type Create = {
   a_enum: Enums.Types.MyEnum;
   a_text_short: Domains.Types.TextShort;
   a_float_range: Ranges.Types.FloatRange;
-  a_timestamp_range: TimestampRange;
+  a_timestamp_range: Postgres.Types.Tstzrange;
 };
 
 export type CreateManyArgs = BaseArgs & { shapes: Create[] };
@@ -120,7 +115,7 @@ export async function createMany({
     shape.a_enum,
     shape.a_text_short,
     shape.a_float_range,
-    shape.a_timestamp_range.toPostgres(postgresRangeSerializer),
+    shape.a_timestamp_range.toPostgres(Postgres.Serializers.range),
   ]);
 
   const query = sql.type(row)`
@@ -225,8 +220,8 @@ export type Update = {
   a_inet: string;
   a_int: number;
   a_interval: any;
-  a_json: z.infer<typeof jsonValue>;
-  a_jsonb: z.infer<typeof jsonValue>;
+  a_json: Postgres.Types.Json;
+  a_jsonb: Postgres.Types.Json;
   a_line: any;
   a_lseg: any;
   a_macaddr: string;
@@ -254,7 +249,7 @@ export type Update = {
   a_enum: Enums.Types.MyEnum;
   a_text_short: Domains.Types.TextShort;
   a_float_range: Ranges.Types.FloatRange;
-  a_timestamp_range: TimestampRange;
+  a_timestamp_range: Postgres.Types.Tstzrange;
 } & { id: Id };
 
 export type UpdateManyArgs = BaseArgs & { newRows: Update[] };
@@ -310,7 +305,7 @@ export function updateMany({
     newRow.a_enum,
     newRow.a_text_short,
     newRow.a_float_range,
-    newRow.a_timestamp_range.toPostgres(postgresRangeSerializer),
+    newRow.a_timestamp_range.toPostgres(Postgres.Serializers.range),
   ]);
 
   const query = sql.type(row)`

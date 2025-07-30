@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { type ListSqlToken, sql } from "slonik";
-import { jsonValue, timestampRangeSchema } from "../../parsers";
+import * as Postgres from "../../postgres";
 import * as Enums from "../enums";
 import * as Domains from "../domains";
 import * as Ranges from "../ranges";
@@ -23,8 +23,8 @@ export const row = z.object({
   a_inet: z.string(),
   a_int: z.number(),
   a_interval: z.any(),
-  a_json: jsonValue,
-  a_jsonb: jsonValue,
+  a_json: Postgres.Schemas.json,
+  a_jsonb: Postgres.Schemas.json,
   a_line: z.any(),
   a_lseg: z.any(),
   a_macaddr: z.string(),
@@ -52,7 +52,7 @@ export const row = z.object({
   a_enum: Enums.Schemas.myEnum,
   a_text_short: Domains.Schemas.textShort,
   a_float_range: Ranges.Schemas.floatRange,
-  a_timestamp_range: timestampRangeSchema,
+  a_timestamp_range: Postgres.Schemas.tstzrange,
 });
 
 export type Row = z.infer<typeof row>;

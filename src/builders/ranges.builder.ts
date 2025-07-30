@@ -1,6 +1,11 @@
 import { RangeDetails, Schema } from "extract-pg-schema";
 import { snakeToCamelCase, snakeToPascalCase } from "./helpers";
-import { isCustomRangeColumn, RangeColumn } from "./column-types";
+import { RangeColumn } from "./column-types";
+import {
+  isBuiltInRange,
+  mapPostgresTypeToTypescriptType,
+  mapPostgresTypeToZodSchema,
+} from "./mappers";
 
 type BuildArgs = {
   schema: Schema;
@@ -23,9 +28,6 @@ function buildImports(): string {
   return DEFAULT_IMPORTS.map((s) => `${s};`).join("\n");
 }
 
-const BUILT_IN_RANGE_SCHEMA_NAME = "builtInRange";
-const BUILT_IN_RANGE_TYPE_NAME = "BuiltInRange";
-
 function buildSchemaNamespace(ranges: RangeDetails[]): string {
   const schemas = ranges.map((range) => {
     const schemaName = rangeDetailsToZodSchemaName(range);
@@ -35,8 +37,6 @@ function buildSchemaNamespace(ranges: RangeDetails[]): string {
   });
 
   return `export namespace Schemas {
-  export const ${BUILT_IN_RANGE_SCHEMA_NAME} = z.string().brand<"pg_catalog.ranges.built_in_range">();
-
   ${schemas.join(";\n\n")}
 }`;
 }
@@ -49,8 +49,6 @@ function buildTypesNamespace(ranges: RangeDetails[]): string {
   });
 
   return `export namespace Types {
-  export type ${BUILT_IN_RANGE_TYPE_NAME} = z.infer<typeof Schemas.${BUILT_IN_RANGE_SCHEMA_NAME}>;
-
   ${types.join(";\n\n")}
 }`;
 }
@@ -64,17 +62,17 @@ export function rangeDetailsToTypescriptType(details: RangeDetails): string {
 }
 
 export function rangeColumnToZodSchemaName(column: RangeColumn): string {
-  const schemaName = isCustomRangeColumn(column)
-    ? snakeToCamelCase(column.informationSchemaValue.udt_name)
-    : BUILT_IN_RANGE_SCHEMA_NAME;
-
-  return `Ranges.Schemas.${schemaName}`;
+  if (isBuiltInRange(column)) {
+    return mapPostgresTypeToZodSchema(column.type.fullName);
+  } else {
+    return `Ranges.Schemas.${snakeToCamelCase(column.informationSchemaValue.udt_name)}`;
+  }
 }
 
 export function rangeColumnToTypescriptType(column: RangeColumn): string {
-  const typeName = isCustomRangeColumn(column)
-    ? snakeToPascalCase(column.informationSchemaValue.udt_name)
-    : BUILT_IN_RANGE_TYPE_NAME;
-
-  return `Ranges.Types.${typeName}`;
+  if (isBuiltInRange(column)) {
+    return mapPostgresTypeToTypescriptType(column.type.fullName);
+  } else {
+    return `Ranges.Types.${snakeToPascalCase(column.informationSchemaValue.udt_name)}`;
+  }
 }
