@@ -55,11 +55,24 @@ await pool.connect(async (connection) => {
       a_enum: "a_value",
       a_text_short: parseTextShortDomain("a_text_short"),
       a_float_range: Ranges.Schemas.floatRange.parse("[1.0,5.0)"),
+      a_int4range: new Range<number>(1, 5, 4),
+      a_int8range: new Range<string>(
+        "90071992547409910",
+        "90071992547409919",
+        4,
+      ),
+      a_numrange: new Range<number>(1.5, 2.5, 4),
+      a_tsrange: new Range<Date>(
+        new Date("2025-01-01 00:00:00"),
+        new Date("2025-01-02 00:00:00"),
+        4,
+      ),
       a_tstzrange: new Range<Date>(
         new Date("2025-01-01 00:00:00+10"),
         new Date("2025-01-02 00:00:00+10"),
         4,
       ),
+      a_daterange: new Range<string>("2025-01-01", "2025-01-05", 4),
     },
   });
 
@@ -117,11 +130,20 @@ await pool.connect(async (connection) => {
       a_enum: "another_value",
       a_text_short: parseTextShortDomain("another_text_short"),
       a_float_range: Ranges.Schemas.floatRange.parse("[2.0,5.0)"),
+      a_int4range: new Range<number>(3, 10, 4),
+      a_int8range: new Range<string>("300", "400", 4),
+      a_numrange: new Range<number>(2.5, 3.5, 4),
+      a_tsrange: new Range<Date>(
+        new Date("2025-01-01 00:00:00"),
+        new Date("2025-05-20 00:00:00"),
+        4,
+      ),
       a_tstzrange: new Range<Date>(
         new Date("2025-01-01 00:00:00+10"),
         new Date("2025-05-20 00:00:00+10"),
         4,
       ),
+      a_daterange: new Range<string>("2025-01-01", "2025-05-20", 4),
     },
   });
 

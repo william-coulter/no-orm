@@ -57,9 +57,13 @@ CREATE TABLE test_type_parsing (
   a_tsvector TSVECTOR NOT NULL,
   a_uuid UUID NOT NULL,
   a_xml XML NOT NULL,
-
   a_enum my_enum NOT NULL,
   a_text_short text_short NOT NULL,
   a_float_range float_range NOT NULL,
-  a_tstzrange tstzrange NOT NULL
+  a_int4range int4range NOT NULL,
+  a_int8range int8range NOT NULL,
+  a_numrange numrange NOT NULL,
+  a_tsrange tsrange NOT NULL,
+  a_tstzrange tstzrange NOT NULL,
+  a_daterange daterange NOT NULL
 );

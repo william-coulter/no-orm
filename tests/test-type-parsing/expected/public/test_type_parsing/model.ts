@@ -60,7 +60,12 @@ export type Create = {
   a_enum: Enums.Types.MyEnum;
   a_text_short: Domains.Types.TextShort;
   a_float_range: Ranges.Types.FloatRange;
+  a_int4range: Postgres.Types.Int4range;
+  a_int8range: Postgres.Types.Int8range;
+  a_numrange: Postgres.Types.Numrange;
+  a_tsrange: Postgres.Types.Tsrange;
   a_tstzrange: Postgres.Types.Tstzrange;
+  a_daterange: Postgres.Types.Daterange;
 };
 
 export type CreateManyArgs = BaseArgs & { shapes: Create[] };
@@ -115,7 +120,12 @@ export async function createMany({
     shape.a_enum,
     shape.a_text_short,
     shape.a_float_range,
+    shape.a_int4range.toPostgres(Postgres.Serializers.range),
+    shape.a_int8range.toPostgres(Postgres.Serializers.range),
+    shape.a_numrange.toPostgres(Postgres.Serializers.range),
+    shape.a_tsrange.toPostgres(Postgres.Serializers.range),
     shape.a_tstzrange.toPostgres(Postgres.Serializers.range),
+    shape.a_daterange.toPostgres(Postgres.Serializers.range),
   ]);
 
   const query = sql.type(row)`
@@ -165,11 +175,16 @@ export async function createMany({
       a_enum,
       a_text_short,
       a_float_range,
-      a_tstzrange
+      a_int4range,
+      a_int8range,
+      a_numrange,
+      a_tsrange,
+      a_tstzrange,
+      a_daterange
     )
-    SELECT a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum, a_text_short, a_float_range, a_tstzrange
-    FROM ${sql.unnest(tuples, ["int8", "int8", "bit", "varbit", "bool", "box", "bytea", "bpchar", "varchar", "cidr", "circle", "date", "float8", "inet", "int4", "interval", "json", "jsonb", "line", "lseg", "macaddr", "macaddr8", "money", "numeric", "path", "pg_lsn", "pg_snapshot", "point", "polygon", "float4", "int2", "int2", "int4", "text", "time", "timetz", "timestamp", "timestamptz", "tsquery", "tsvector", "uuid", "xml", "my_enum", "text_short", "float_range", "tstzrange"])}
-      AS input(a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum, a_text_short, a_float_range, a_tstzrange)
+    SELECT a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum, a_text_short, a_float_range, a_int4range, a_int8range, a_numrange, a_tsrange, a_tstzrange, a_daterange
+    FROM ${sql.unnest(tuples, ["int8", "int8", "bit", "varbit", "bool", "box", "bytea", "bpchar", "varchar", "cidr", "circle", "date", "float8", "inet", "int4", "interval", "json", "jsonb", "line", "lseg", "macaddr", "macaddr8", "money", "numeric", "path", "pg_lsn", "pg_snapshot", "point", "polygon", "float4", "int2", "int2", "int4", "text", "time", "timetz", "timestamp", "timestamptz", "tsquery", "tsvector", "uuid", "xml", "my_enum", "text_short", "float_range", "int4range", "int8range", "numrange", "tsrange", "tstzrange", "daterange"])}
+      AS input(a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum, a_text_short, a_float_range, a_int4range, a_int8range, a_numrange, a_tsrange, a_tstzrange, a_daterange)
     RETURNING ${columnsFragment}`;
 
   return connection.any(query);
@@ -249,7 +264,12 @@ export type Update = {
   a_enum: Enums.Types.MyEnum;
   a_text_short: Domains.Types.TextShort;
   a_float_range: Ranges.Types.FloatRange;
+  a_int4range: Postgres.Types.Int4range;
+  a_int8range: Postgres.Types.Int8range;
+  a_numrange: Postgres.Types.Numrange;
+  a_tsrange: Postgres.Types.Tsrange;
   a_tstzrange: Postgres.Types.Tstzrange;
+  a_daterange: Postgres.Types.Daterange;
 } & { id: Id };
 
 export type UpdateManyArgs = BaseArgs & { newRows: Update[] };
@@ -305,7 +325,12 @@ export function updateMany({
     newRow.a_enum,
     newRow.a_text_short,
     newRow.a_float_range,
+    newRow.a_int4range.toPostgres(Postgres.Serializers.range),
+    newRow.a_int8range.toPostgres(Postgres.Serializers.range),
+    newRow.a_numrange.toPostgres(Postgres.Serializers.range),
+    newRow.a_tsrange.toPostgres(Postgres.Serializers.range),
     newRow.a_tstzrange.toPostgres(Postgres.Serializers.range),
+    newRow.a_daterange.toPostgres(Postgres.Serializers.range),
   ]);
 
   const query = sql.type(row)`
@@ -355,7 +380,12 @@ export function updateMany({
       a_enum = input.a_enum,
       a_text_short = input.a_text_short,
       a_float_range = input.a_float_range,
-      a_tstzrange = input.a_tstzrange
+      a_int4range = input.a_int4range,
+      a_int8range = input.a_int8range,
+      a_numrange = input.a_numrange,
+      a_tsrange = input.a_tsrange,
+      a_tstzrange = input.a_tstzrange,
+      a_daterange = input.a_daterange
     FROM ${sql.unnest(tuples, [
       "int4",
       "int8",
@@ -403,8 +433,13 @@ export function updateMany({
       "my_enum",
       "text_short",
       "float_range",
+      "int4range",
+      "int8range",
+      "numrange",
+      "tsrange",
       "tstzrange",
-    ])} AS input(id, a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum, a_text_short, a_float_range, a_tstzrange)
+      "daterange",
+    ])} AS input(id, a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum, a_text_short, a_float_range, a_int4range, a_int8range, a_numrange, a_tsrange, a_tstzrange, a_daterange)
     WHERE t.id = input.id
     RETURNING ${aliasColumns("t")}`;
 

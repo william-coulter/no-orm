@@ -22,12 +22,12 @@ export namespace Schemas {
     },
   );
 
-  export const int8range = z.custom<Range<bigint>>(
+  export const int8range = z.custom<Range<string>>(
     (val) =>
       val instanceof Range &&
-      (typeof val.lower === "bigint" || typeof val.upper === "bigint"),
+      (typeof val.lower === "string" || typeof val.upper === "string"),
     {
-      message: "Expected a Range<bigint> (int8range)",
+      message: "Expected a Range<string> (int8range)",
     },
   );
 
@@ -58,12 +58,12 @@ export namespace Schemas {
     },
   );
 
-  export const daterange = z.custom<Range<Date>>(
+  export const daterange = z.custom<Range<string>>(
     (val) =>
       val instanceof Range &&
-      (val.lower instanceof Date || val.upper instanceof Date),
+      (typeof val.lower === "string" || typeof val.upper === "string"),
     {
-      message: "Expected a Range<Date> (daterange)",
+      message: "Expected a Range<string> (daterange)",
     },
   );
 }
