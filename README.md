@@ -216,17 +216,6 @@ A list of behaviours from various ORMs that we think are heinous and should not 
 
 Some checksum between `no-orm` generated locally vs deployed.
 
-## Extend `Range` type
+## Extend custom `Range` types
 
-Right now they are just strings. They could probably become something like this:
-
-```typescript
-export type RangeType<T> = {
-  /** If `null`, unbounded. */
-  start: T | null;
-  /** If `null`, unbounded. */
-  end: T | null;
-  inclusiveStart: boolean;
-  inclusiveEnd: boolean;
-};
-```
+Right now they are just strings. They should match the built-in range types.
