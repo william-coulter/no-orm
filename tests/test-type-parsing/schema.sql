@@ -12,6 +12,14 @@ CREATE TYPE float_range AS RANGE (
     subtype_diff = float8mi
 );
 
+-- STARTHERE: Handle composite types.
+-- See how Slonik handles them. Really consider just returning `any` and marking it as a limitation.
+CREATE TYPE inventory_item AS (
+    name            text,
+    supplier_id     integer,
+    price           numeric
+);
+
 CREATE TABLE test_type_parsing (
   id SERIAL PRIMARY KEY,
 
