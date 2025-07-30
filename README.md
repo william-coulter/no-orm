@@ -212,7 +212,7 @@ A list of behaviours from various ORMs that we think are heinous and should not 
 
 # Fast follows
 
-## Detecting
+## Detecting database drift
 
 Some checksum between `no-orm` generated locally vs deployed.
 
