@@ -61,6 +61,5 @@ CREATE TABLE test_type_parsing (
   a_enum my_enum NOT NULL,
   a_text_short text_short NOT NULL,
   a_float_range float_range NOT NULL,
-  -- FIXME: Test the other built-in ranges..
-  a_timestamp_range tstzrange NOT NULL
+  a_tstzrange tstzrange NOT NULL
 );

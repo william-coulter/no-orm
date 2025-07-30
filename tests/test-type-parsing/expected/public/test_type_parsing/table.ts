@@ -52,7 +52,7 @@ export const row = z.object({
   a_enum: Enums.Schemas.myEnum,
   a_text_short: Domains.Schemas.textShort,
   a_float_range: Ranges.Schemas.floatRange,
-  a_timestamp_range: Postgres.Schemas.tstzrange,
+  a_tstzrange: Postgres.Schemas.tstzrange,
 });
 
 export type Row = z.infer<typeof row>;
