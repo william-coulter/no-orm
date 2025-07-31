@@ -5,8 +5,17 @@ import { pool } from "../slonik-test-connection";
 import * as Domains from "./expected/public/domains";
 import * as Ranges from "./expected/public/ranges";
 import * as TestModel from "./expected/public/test_type_parsing/model";
+import { sql } from "slonik";
 
 await pool.connect(async (connection) => {
+  // const test = await pool.query(sql.unsafe`
+  //   SELECT *
+  //   FROM unnest(ARRAY[
+  //     ROW('Screwdriver', 42, 9.99)::inventory_item
+  //   ]::inventory_item[])
+  // `);
+  // console.log("test", test.rows);
+
   const create = await TestModel.create({
     connection,
     shape: {
@@ -73,8 +82,15 @@ await pool.connect(async (connection) => {
         4,
       ),
       a_daterange: new Range<string>("2025-01-01", "2025-01-05", 4),
+      a_composite_type: {
+        name: "goblin armour",
+        supplier_id: 1,
+        price: 30.5,
+      },
     },
   });
+
+  console.log(create.a_composite_type);
 
   const read = await TestModel.get({
     connection,

@@ -66,6 +66,7 @@ export type Create = {
   a_tsrange: Postgres.Types.Tsrange;
   a_tstzrange: Postgres.Types.Tstzrange;
   a_daterange: Postgres.Types.Daterange;
+  a_composite_type: any;
 };
 
 export type CreateManyArgs = BaseArgs & { shapes: Create[] };
@@ -126,6 +127,12 @@ export async function createMany({
     shape.a_tsrange.toPostgres(Postgres.Serializers.range),
     shape.a_tstzrange.toPostgres(Postgres.Serializers.range),
     shape.a_daterange.toPostgres(Postgres.Serializers.range),
+    // STARTHERE:
+    // This works:
+    //    SELECT ROW('goblin armour',1,2.5)::inventory_item;
+    // This does not (what this produces):
+    //    SELECT ROW('"goblin armour",1,2.5')::inventory_item;
+    `${shape.a_composite_type.name},${shape.a_composite_type.supplier_id},${shape.a_composite_type.price}`,
   ]);
 
   const query = sql.type(row)`
@@ -180,12 +187,70 @@ export async function createMany({
       a_numrange,
       a_tsrange,
       a_tstzrange,
-      a_daterange
+      a_daterange,
+      a_composite_type
     )
-    SELECT a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum, a_text_short, a_float_range, a_int4range, a_int8range, a_numrange, a_tsrange, a_tstzrange, a_daterange
-    FROM ${sql.unnest(tuples, ["int8", "int8", "bit", "varbit", "bool", "box", "bytea", "bpchar", "varchar", "cidr", "circle", "date", "float8", "inet", "int4", "interval", "json", "jsonb", "line", "lseg", "macaddr", "macaddr8", "money", "numeric", "path", "pg_lsn", "pg_snapshot", "point", "polygon", "float4", "int2", "int2", "int4", "text", "time", "timetz", "timestamp", "timestamptz", "tsquery", "tsvector", "uuid", "xml", "my_enum", "text_short", "float_range", "int4range", "int8range", "numrange", "tsrange", "tstzrange", "daterange"])}
-      AS input(a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum, a_text_short, a_float_range, a_int4range, a_int8range, a_numrange, a_tsrange, a_tstzrange, a_daterange)
+    SELECT a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum, a_text_short, a_float_range, a_int4range, a_int8range, a_numrange, a_tsrange, a_tstzrange, a_daterange, 
+      ROW(a_composite_type)::inventory_item
+    FROM ${sql.unnest(tuples, [
+      "int8",
+      "int8",
+      "bit",
+      "varbit",
+      "bool",
+      "box",
+      "bytea",
+      "bpchar",
+      "varchar",
+      "cidr",
+      "circle",
+      "date",
+      "float8",
+      "inet",
+      "int4",
+      "interval",
+      "json",
+      "jsonb",
+      "line",
+      "lseg",
+      "macaddr",
+      "macaddr8",
+      "money",
+      "numeric",
+      "path",
+      "pg_lsn",
+      "pg_snapshot",
+      "point",
+      "polygon",
+      "float4",
+      "int2",
+      "int2",
+      "int4",
+      "text",
+      "time",
+      "timetz",
+      "timestamp",
+      "timestamptz",
+      "tsquery",
+      "tsvector",
+      "uuid",
+      "xml",
+      "my_enum",
+      "text_short",
+      "float_range",
+      "int4range",
+      "int8range",
+      "numrange",
+      "tsrange",
+      "tstzrange",
+      "daterange",
+      "inventory_item",
+    ])}
+      AS input(a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum, a_text_short, a_float_range, a_int4range, a_int8range, a_numrange, a_tsrange, a_tstzrange, a_daterange, a_composite_type)
     RETURNING ${columnsFragment}`;
+
+  console.log(query.sql);
+  console.log(query.values);
 
   return connection.any(query);
 }
