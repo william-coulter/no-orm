@@ -37,22 +37,22 @@ describe("no-orm", () => {
   const TESTS_DIR = path.join(__dirname);
   type TestCase = { name: string; directory: string };
   const testCases: TestCase[] = [
-    // {
-    //   name: "Example from the docs (hero section).",
-    //   directory: path.join(TESTS_DIR, "test-docs-hero-example"),
-    // },
+    {
+      name: "Example from the docs (hero section).",
+      directory: path.join(TESTS_DIR, "test-docs-hero-example"),
+    },
     {
       name: "Test handling of all supported Postgres types.",
       directory: path.join(TESTS_DIR, "test-type-parsing"),
     },
-    // {
-    //   name: "Test foreign key references",
-    //   directory: path.join(TESTS_DIR, "test-foreign-keys"),
-    // },
-    // {
-    //   name: "Test indexes",
-    //   directory: path.join(TESTS_DIR, "test-indexes"),
-    // },
+    {
+      name: "Test foreign key references",
+      directory: path.join(TESTS_DIR, "test-foreign-keys"),
+    },
+    {
+      name: "Test indexes",
+      directory: path.join(TESTS_DIR, "test-indexes"),
+    },
   ];
 
   afterEach(async () => {
@@ -84,35 +84,35 @@ describe("no-orm", () => {
     // First remove any previous test outputs.
     await fs.rm(testOutputDir, { recursive: true, force: true });
 
-    // const noOrmResult = await execa(
-    //   "npx",
-    //   ["tsx", cliPath, "--config-path", configPath],
-    //   {
-    //     env: {
-    //       ...process.env,
-    //       POSTGRES_CONNECTION_STRING: connectionString,
-    //       OUTPUT_DIRECTORY: testOutputDir,
-    //     },
-    //     stdio: "inherit",
-    //   },
-    // );
-    // expect(noOrmResult.exitCode).toEqual(0);
+    const noOrmResult = await execa(
+      "npx",
+      ["tsx", cliPath, "--config-path", configPath],
+      {
+        env: {
+          ...process.env,
+          POSTGRES_CONNECTION_STRING: connectionString,
+          OUTPUT_DIRECTORY: testOutputDir,
+        },
+        stdio: "inherit",
+      },
+    );
+    expect(noOrmResult.exitCode).toEqual(0);
 
-    // // For every file in `expected`, let's assert the same file exists in `test-outputs` and that it matches.
-    // const expectedPath = path.join(testCase.directory, "expected");
-    // const expectedFilePaths = await getAllRelativeFilePaths(expectedPath);
+    // For every file in `expected`, let's assert the same file exists in `test-outputs` and that it matches.
+    const expectedPath = path.join(testCase.directory, "expected");
+    const expectedFilePaths = await getAllRelativeFilePaths(expectedPath);
 
-    // for (const relativePath of expectedFilePaths) {
-    //   const expectedFile = path.join(expectedPath, relativePath);
-    //   const actualFile = path.join(testOutputDir, relativePath);
+    for (const relativePath of expectedFilePaths) {
+      const expectedFile = path.join(expectedPath, relativePath);
+      const actualFile = path.join(testOutputDir, relativePath);
 
-    //   const [expectedContents, actualContents] = await Promise.all([
-    //     safeReadFile(expectedFile, "utf8"),
-    //     safeReadFile(actualFile, "utf8"),
-    //   ]);
+      const [expectedContents, actualContents] = await Promise.all([
+        safeReadFile(expectedFile, "utf8"),
+        safeReadFile(actualFile, "utf8"),
+      ]);
 
-    //   expect(expectedContents).toEqual(actualContents);
-    // }
+      expect(expectedContents).toEqual(actualContents);
+    }
 
     // Let's also assert that the generated functions can execute successfully against a database.
     const functionalityPath = path.join(testCase.directory, "functionality.ts");

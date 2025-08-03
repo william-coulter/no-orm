@@ -118,7 +118,7 @@ function buildImports({ table }: { table: TableDetails }): string {
     imports.push(`import * as Domains from "../domains"`);
   }
 
-  const ranges = table.columns.filter((col) => !isBuiltInRange(col));
+  const ranges = table.columns.filter((col) => isBuiltInRange(col));
   if (ranges.length > 0) {
     imports.push(`import * as Ranges from "../ranges"`);
   }
