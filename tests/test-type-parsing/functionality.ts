@@ -5,67 +5,8 @@ import { pool } from "../slonik-test-connection";
 import * as Domains from "./expected/public/domains";
 import * as Ranges from "./expected/public/ranges";
 import * as TestModel from "./expected/public/test_type_parsing/model";
-import { sql } from "slonik";
 
 await pool.connect(async (connection) => {
-  // NB: Apparently I have to do something like this:
-  //
-  //   INSERT INTO test_composite_type (
-  //   a_inventory_item,
-  //   a_int
-  // )
-  // SELECT *
-  // FROM unnest(ARRAY[
-  //   ROW(ROW('goblin armour', 1, 30.5)::inventory_item, 4),
-  //   ROW(ROW('sword', 2, 50.0)::inventory_item, 5)
-  // ]::record[])
-  //   AS t(a_inventory_item inventory_item, a_int int)
-  // RETURNING *;
-  //
-  // The problem is not to do with Slonik but rather I can't find a good way
-  // to UNNEST composite types with an alias.
-  //
-  // SELECT *
-  // FROM unnest(ARRAY[
-  //   ROW('Screwdriver', 42, 9.99)
-  // ]::inventory_item[]);
-  //     name     | supplier_id | price
-  // -------------+-------------+-------
-  //  Screwdriver |          42 |  9.99
-  //
-  // Note that the entire composite type is flattened into multiple columns, rather than 1 column.
-  // So when you alias it like I do in my create statements:
-  //
-  // SELECT *
-  // FROM unnest(ARRAY[
-  //   ROW('Screwdriver', 42, 9.99)
-  // ]::inventory_item[]) AS input(a_inventory_item);
-  //  a_inventory_item  | supplier_id | price
-  // -------------------+-------------+-------
-  //  Screwdriver       |          42 |  9.99
-  //
-  // Only the 1st column is renamed and that ruins the rest of the statement.
-
-  const query = sql.unsafe`
-INSERT INTO test_composite_type (
-  a_inventory_item,
-  a_int 
-)
-SELECT a_inventory_item, a_int
-FROM UNNEST(
-  ARRAY[ROW('goblin armour', 1, 30.5)]::"inventory_item"[],
-  ARRAY[4]::"int4"[]
-) AS input(a_inventory_item, a_int)
-RETURNING *`;
-
-  console.log(query.sql);
-  console.log(query.type);
-  console.log(query.values);
-
-  const test = await pool.query(query);
-  console.log("test", test.rows);
-  process.exit(0);
-
   const create = await TestModel.create({
     connection,
     shape: {
@@ -132,15 +73,8 @@ RETURNING *`;
         4,
       ),
       a_daterange: new Range<string>("2025-01-01", "2025-01-05", 4),
-      a_composite_type: {
-        name: "goblin armour",
-        supplier_id: 1,
-        price: 30.5,
-      },
     },
   });
-
-  console.log(create.a_composite_type);
 
   const read = await TestModel.get({
     connection,

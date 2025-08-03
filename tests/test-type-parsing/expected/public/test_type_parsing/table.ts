@@ -58,7 +58,6 @@ export const row = z.object({
   a_tsrange: Postgres.Schemas.tsrange,
   a_tstzrange: Postgres.Schemas.tstzrange,
   a_daterange: Postgres.Schemas.daterange,
-  a_composite_type: z.any(),
 });
 
 export type Row = z.infer<typeof row>;

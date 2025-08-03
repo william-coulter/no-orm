@@ -3,7 +3,9 @@ import { TableColumn } from "extract-pg-schema";
 import * as logger from "../logger";
 import { getColumnReference, snakeToPascalCase } from "./helpers";
 import {
+  CompositeColumn,
   isBaseColumn,
+  isCompositeColumn,
   isDomainColumn,
   isEnumColumn,
   isRangeColumn,
@@ -43,6 +45,8 @@ export function columnToZodType(column: TableColumn): string {
     return `${domainColumnToZodSchemaName(column)}${nullableText}`;
   } else if (isRangeColumn(column)) {
     return `${rangeColumnToZodSchemaName(column)}${nullableText}`;
+  } else if (isCompositeColumn(column)) {
+    throw new UnsupportedCompositeType(column);
   }
 
   logger.warn(`Could not map column to a zod type, defaulting to 'z.any()'. 
@@ -70,6 +74,8 @@ export function columnToTypescriptType(column: TableColumn): string {
     return `${domainColumnToTypescriptType(column)}${nullableText}`;
   } else if (isRangeColumn(column)) {
     return `${rangeColumnToTypescriptType(column)}${nullableText}`;
+  } else if (isCompositeColumn(column)) {
+    throw new UnsupportedCompositeType(column);
   }
 
   logger.warn(`Could not map column to a Typescript type, defaulting to 'any'. 
@@ -94,6 +100,8 @@ export function pgTypeToUnnestType(column: TableColumn): string {
     return column.informationSchemaValue.domain_name!;
   } else if (isRangeColumn(column)) {
     return column.informationSchemaValue.udt_name;
+  } else if (isCompositeColumn(column)) {
+    throw new UnsupportedCompositeType(column);
   }
 
   logger.warn(`Could not map column to a unnest type, defaulting to "text". 
@@ -371,5 +379,13 @@ export function isBuiltInRange(column: TableColumn): boolean {
     default: {
       return false;
     }
+  }
+}
+
+export class UnsupportedCompositeType extends Error {
+  constructor(column: CompositeColumn) {
+    super(
+      `Unsupported composite type column '${column.name}' and table '${column.informationSchemaValue.table_schema}.${column.informationSchemaValue.table_name}'. Type '${column.type.fullName}'.\n\nUnfortunately you cannot use no-orm with this schema :(`,
+    );
   }
 }

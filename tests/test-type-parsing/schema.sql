@@ -12,19 +12,6 @@ CREATE TYPE float_range AS RANGE (
     subtype_diff = float8mi
 );
 
-CREATE TYPE inventory_item AS (
-    name            text,
-    supplier_id     integer,
-    price           numeric
-);
-
-CREATE TABLE test_composite_type (
-  id SERIAL PRIMARY KEY,
-
-  a_inventory_item inventory_item NOT NULL,
-  a_int INT NOT NULL
-);
-
 CREATE TABLE test_type_parsing (
   id SERIAL PRIMARY KEY,
 
@@ -78,6 +65,5 @@ CREATE TABLE test_type_parsing (
   a_numrange numrange NOT NULL,
   a_tsrange tsrange NOT NULL,
   a_tstzrange tstzrange NOT NULL,
-  a_daterange daterange NOT NULL,
-  a_composite_type inventory_item NOT NULL
+  a_daterange daterange NOT NULL
 );
