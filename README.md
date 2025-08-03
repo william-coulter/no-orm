@@ -1,6 +1,6 @@
 # TODO List:
 
-- Add `*Map` functions.
+- Add `*Map` functions. <!-- STARTHERE: Do this. -->
 - Test readonly and omitted columns.
 - Add logger (warn on unknown types, add loading spinner).
 - Address all `TODO`s / `FIXME`s in the code.
