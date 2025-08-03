@@ -398,7 +398,7 @@ function buildIndexFunction({
       tableColumn,
     });
   } else {
-    const columnPairs = index.columns.map((indexColumn) => {
+    const tableColumns = index.columns.map((indexColumn) => {
       const tableColumn: TableColumn | undefined = table.columns.find(
         (c) => c.name === indexColumn.name,
       );
@@ -407,14 +407,11 @@ function buildIndexFunction({
         throw new NoTableColumnForIndex(table, index);
       }
 
-      return {
-        indexColumn: indexColumn as TableIndexColumnNonFunctionalNoPredicate,
-        tableColumn,
-      };
+      return tableColumn;
     });
 
     return buildMultiColumnIndexFunction({
-      columns: columnPairs,
+      columns: tableColumns,
     });
   }
 }
@@ -492,15 +489,9 @@ function buildSingleColumnIndexFunction({
 function buildMultiColumnIndexFunction({
   columns,
 }: {
-  columns: {
-    // FIXME: Do I need the index columns down in these builders?
-    indexColumn: TableIndexColumnNonFunctionalNoPredicate;
-    tableColumn: TableColumn;
-  }[];
+  columns: TableColumn[];
 }): string {
-  const pascalCaseParts = columns.map(({ indexColumn: indexCol }) =>
-    snakeToPascalCase(indexCol.name),
-  );
+  const pascalCaseParts = columns.map((col) => snakeToPascalCase(col.name));
   const pascalCaseName = pascalCaseParts.join("And");
 
   const getManyArgsName = `GetManyBy${pascalCaseName}`;
@@ -509,8 +500,7 @@ function buildMultiColumnIndexFunction({
   const getFunctionName = `getBy${pascalCaseName}`;
 
   const getManyArgsFields = columns.map(
-    ({ indexColumn: indexCol, tableColumn: tableCol }) =>
-      `${indexCol.name}: ${columnToTypescriptType(tableCol)};`,
+    (col) => `${col.name}: ${columnToTypescriptType(col)};`,
   );
 
   const getManyArgs = `export type ${getManyArgsName} = BaseArgs & {
@@ -519,25 +509,20 @@ function buildMultiColumnIndexFunction({
     }[];
   };`;
 
-  const unnestTypes = columns.map(
-    ({ tableColumn: tableCol }) => `"${pgTypeToUnnestType(tableCol)}"`,
-  );
-  const inputColumnNames = columns
-    .map(({ indexColumn: indexCol }) => indexCol.name)
-    .join(", ");
+  const unnestTypes = columns.map((col) => `"${pgTypeToUnnestType(col)}"`);
+  const inputColumnNames = columns.map((col) => col.name).join(", ");
 
   const tuples = columns
-    .map(({ tableColumn: tableCol }) => {
+    .map((col) => {
       return columnToSlonikPrimitiveValue({
-        column: tableCol,
-        variableName: `col.${tableCol.name}`,
+        column: col,
+        variableName: `col.${col.name}`,
       });
     })
     .join(", ");
 
   const joinConditions = columns.map(
-    ({ indexColumn: indexCol }) =>
-      `input.${indexCol.name} = t.${indexCol.name}`,
+    (col) => `input.${col.name} = t.${col.name}`,
   );
   const getManyFunction = `export async function ${getManyFunctionName}({
   connection,
@@ -557,19 +542,14 @@ function buildMultiColumnIndexFunction({
 };`;
 
   const singleArgsFields = columns
-    .map(
-      ({ indexColumn: indexCol, tableColumn: tableCol }) =>
-        `${indexCol.name}: ${columnToTypescriptType(tableCol)};`,
-    )
+    .map((col) => `${col.name}: ${columnToTypescriptType(col)};`)
     .join("\n");
 
   const getArgs = `export type ${getArgsName} = BaseArgs & {
     ${singleArgsFields}
   };`;
 
-  const passArgsObject = columns
-    .map(({ indexColumn: indexCol }) => `${indexCol.name}`)
-    .join(", ");
+  const passArgsObject = columns.map((col) => `${col.name}`).join(", ");
 
   const getFunction = `export async function ${getFunctionName}({
     connection,
