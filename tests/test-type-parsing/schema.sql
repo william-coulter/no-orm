@@ -18,6 +18,13 @@ CREATE TYPE inventory_item AS (
     price           numeric
 );
 
+CREATE TABLE test_composite_type (
+  id SERIAL PRIMARY KEY,
+
+  a_inventory_item inventory_item NOT NULL,
+  a_int INT NOT NULL
+);
+
 CREATE TABLE test_type_parsing (
   id SERIAL PRIMARY KEY,
 

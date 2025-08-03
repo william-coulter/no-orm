@@ -127,11 +127,6 @@ export async function createMany({
     shape.a_tsrange.toPostgres(Postgres.Serializers.range),
     shape.a_tstzrange.toPostgres(Postgres.Serializers.range),
     shape.a_daterange.toPostgres(Postgres.Serializers.range),
-    // STARTHERE:
-    // This works:
-    //    SELECT ROW('goblin armour',1,2.5)::inventory_item;
-    // This does not (what this produces):
-    //    SELECT ROW('"goblin armour",1,2.5')::inventory_item;
     `${shape.a_composite_type.name},${shape.a_composite_type.supplier_id},${shape.a_composite_type.price}`,
   ]);
 
