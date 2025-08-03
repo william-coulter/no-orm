@@ -86,6 +86,33 @@ export function columnToTypescriptType(column: TableColumn): string {
   return "any";
 }
 
+type SerialiseToUnnestValueArguments = {
+  column: TableColumn;
+  variableName: string;
+  /** For index columns, this is different to the table column name */
+  columnNameOverride?: string;
+};
+
+/**
+ * Maps a column to a value that can be used in a Slonik `PrimitiveValueExpression`.
+ */
+export function columnToSlonikPrimitiveValue({
+  column,
+  variableName,
+}: SerialiseToUnnestValueArguments): string {
+  if (isDateLike(column)) {
+    return `${variableName}.${column.name}.toISOString()`;
+  } else if (isJsonLike(column)) {
+    return `JSON.stringify(${variableName}.${column.name})`;
+  } else if (isIntervalColumn(column)) {
+    return `${variableName}.${column.name}.toPostgres()`;
+  } else if (isBuiltInRange(column)) {
+    return `${variableName}.${column.name}.toPostgres(Postgres.Serializers.range)`;
+  } else {
+    return `${variableName}.${column.name}`;
+  }
+}
+
 /**
  * Converts PG types to a string that can be used to specify the type in a SQL `UNNEST` block.
  *
@@ -145,9 +172,8 @@ export function mapPostgresTypeToZodSchema(postgresType: string): string {
     case "pg_catalog.timetz": {
       return "z.string()";
     }
-    // FIXME: Handle interval type. See here: https://github.com/gajus/slonik?tab=readme-ov-file#sqlinterval
     case "pg_catalog.interval": {
-      return "z.any()";
+      return "Postgres.Schemas.interval";
     }
     case "pg_catalog.json":
     case "pg_catalog.jsonb": {
@@ -251,9 +277,8 @@ export function mapPostgresTypeToTypescriptType(postgresType: string): string {
     case "pg_catalog.timetz": {
       return "string";
     }
-    // FIXME: Handle interval type. See here: https://github.com/gajus/slonik?tab=readme-ov-file#sqlinterval
     case "pg_catalog.interval": {
-      return "any";
+      return "Postgres.Types.Interval";
     }
     case "pg_catalog.json":
     case "pg_catalog.jsonb": {
@@ -373,6 +398,23 @@ export function isBuiltInRange(column: TableColumn): boolean {
     case "pg_catalog.tsrange":
     case "pg_catalog.tstzrange":
     case "pg_catalog.daterange": {
+      return true;
+    }
+
+    default: {
+      return false;
+    }
+  }
+}
+
+/** Returns `true` if the column is a built in Postgres range. */
+export function isIntervalColumn(column: TableColumn): boolean {
+  if (column.type.kind !== "base") {
+    return false;
+  }
+
+  switch (column.type.fullName) {
+    case "pg_catalog.interval": {
       return true;
     }
 

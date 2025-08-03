@@ -6,12 +6,17 @@ import {
   type QueryResultRow,
   SchemaValidationError,
 } from "slonik";
+import { default as parseInterval, IPostgresInterval } from "postgres-interval";
 
 export const pool = await createPool(
   process.env.POSTGRES_CONNECTION_STRING ?? "",
   {
     interceptors: [createResultParserInterceptor()],
-    typeParsers: [...createTypeParserPreset(), ...dateLikeParsers()],
+    typeParsers: [
+      ...createTypeParserPreset(),
+      ...createDateLikeParsers(),
+      createIntervalParser(),
+    ],
   },
 );
 
@@ -24,7 +29,7 @@ export const pool = await createPool(
  * While this is a valid design choice, in most cases it's just easier to use `Date`
  * so `no-orm` will use this.
  */
-function dateLikeParsers(): DriverTypeParser<Date>[] {
+function createDateLikeParsers(): DriverTypeParser<Date>[] {
   return [
     {
       name: "timestamptz",
@@ -39,6 +44,15 @@ function dateLikeParsers(): DriverTypeParser<Date>[] {
       },
     },
   ];
+}
+
+function createIntervalParser(): DriverTypeParser<IPostgresInterval> {
+  return {
+    name: "interval",
+    parse: (value) => {
+      return parseInterval(value);
+    },
+  };
 }
 
 /**

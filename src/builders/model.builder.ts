@@ -8,9 +8,10 @@ import {
 import {
   columnToTypescriptType,
   isBuiltInRange,
-  isDateLike,
+  isIntervalColumn,
   isJsonLike,
   pgTypeToUnnestType,
+  columnToSlonikPrimitiveValue,
 } from "./mappers";
 import { getColumnReference, snakeToPascalCase } from "./helpers";
 import { isDomainColumn, isEnumColumn } from "./column-types";
@@ -93,8 +94,9 @@ function buildImports({ table }: { table: TableDetails }): string {
   const imports = DEFAULT_IMPORTS;
 
   const containsJsonColumn = table.columns.some(isJsonLike);
+  const containsIntervalColumn = table.columns.some(isIntervalColumn);
   const containsBuiltInRange = table.columns.some(isBuiltInRange);
-  if (containsJsonColumn || containsBuiltInRange) {
+  if (containsJsonColumn || containsIntervalColumn || containsBuiltInRange) {
     imports.push(`import * as Postgres from "../../postgres"`);
   }
 
@@ -154,17 +156,9 @@ function buildCreateManyFunction({
   const fieldNames = createColumns.map((col) => col.name);
 
   const tuples = createColumns
-    .map((col) => {
-      if (isDateLike(col)) {
-        return `shape.${col.name}.toISOString()`;
-      } else if (isJsonLike(col)) {
-        return `JSON.stringify(shape.${col.name})`;
-      } else if (isBuiltInRange(col)) {
-        return `shape.${col.name}.toPostgres(Postgres.Serializers.range)`;
-      } else {
-        return `shape.${col.name}`;
-      }
-    })
+    .map((col) =>
+      columnToSlonikPrimitiveValue({ column: col, variableName: "shape" }),
+    )
     .join(`,\n    `);
   const unnestTypes = createColumns
     .map((col) => `"${pgTypeToUnnestType(col)}"`)
@@ -273,17 +267,9 @@ function buildUpdateManyFunction({
   const primaryKeyAndUpdatableColumns = [primaryKey, ...updatableColumns];
 
   const tuples = primaryKeyAndUpdatableColumns
-    .map((col) => {
-      if (isDateLike(col)) {
-        return `newRow.${col.name}.toISOString()`;
-      } else if (isJsonLike(col)) {
-        return `JSON.stringify(newRow.${col.name})`;
-      } else if (isBuiltInRange(col)) {
-        return `newRow.${col.name}.toPostgres(Postgres.Serializers.range)`;
-      } else {
-        return `newRow.${col.name}`;
-      }
-    })
+    .map((col) =>
+      columnToSlonikPrimitiveValue({ column: col, variableName: "newRow" }),
+    )
     .join(`,\n    `);
 
   const columnUpdates = updatableColumns
@@ -403,7 +389,6 @@ function buildIndexFunction({
 
     return buildSingleColumnIndexFunction({
       index,
-      indexColumn,
       tableColumn,
     });
   } else {
@@ -436,11 +421,9 @@ type TableIndexColumnNonFunctionalNoPredicate = TableIndexColumnNonFunctional &
 
 function buildSingleColumnIndexFunction({
   index,
-  indexColumn,
   tableColumn,
 }: {
   index: TableIndex;
-  indexColumn: TableIndexColumnNonFunctionalNoPredicate;
   tableColumn: TableColumn;
 }): string {
   const columnName = tableColumn.name;
@@ -448,28 +431,22 @@ function buildSingleColumnIndexFunction({
   const columnTypescriptType = columnToTypescriptType(tableColumn);
 
   const getManyArgsName = `GetManyBy${columnNamePascalCase}Args`;
+  // FIXME: Just make me `columns`.
   const getManyArgumentName = `${columnName}_list`;
   const getManyArgs = `export type ${getManyArgsName} = BaseArgs & {
     ${getManyArgumentName}: ${columnTypescriptType}[];
   }`;
-  const getManyParsedListMapping = () => {
-    if (isDateLike(tableColumn)) {
-      return `${columnName}.toISOString()`;
-    } else if (isJsonLike(tableColumn)) {
-      return `JSON.stringify(${columnName})`;
-    } else if (isBuiltInRange(tableColumn)) {
-      return `shape.${tableColumn.name}.toPostgres(Postgres.Serializers.range)`;
-    } else {
-      return `${columnName}`;
-    }
-  };
+  const slonikPrimitiveMapping = columnToSlonikPrimitiveValue({
+    column: tableColumn,
+    variableName: "col",
+  });
 
   const getManyFunctionName = `getManyBy${columnNamePascalCase}`;
   const getManyFunction = `export async function ${getManyFunctionName}({
     connection,
     ${getManyArgumentName},
   }: ${getManyArgsName}): Promise<readonly Row[]> {
-  const parsedList = ${getManyArgumentName}.map((${columnName}) => ${getManyParsedListMapping()});
+  const parsedList = ${getManyArgumentName}.map(col => ${slonikPrimitiveMapping});
   return connection.any(sql.type(row)\`
     SELECT \${columnsFragment}
     FROM \${tableFragment}
@@ -511,6 +488,7 @@ function buildMultiColumnIndexFunction({
   columns,
 }: {
   columns: {
+    // FIXME: Do I need the index columns down in these builders?
     indexColumn: TableIndexColumnNonFunctionalNoPredicate;
     tableColumn: TableColumn;
   }[];
@@ -543,17 +521,12 @@ function buildMultiColumnIndexFunction({
     .map(({ indexColumn: indexCol }) => indexCol.name)
     .join(", ");
 
-  const mapTupleElements = columns
-    .map(({ indexColumn: indexCol, tableColumn: tableCol }) => {
-      if (isDateLike(tableCol)) {
-        return `col.${indexCol.name}.toISOString()`;
-      } else if (isJsonLike(tableCol)) {
-        return `JSON.stringify(col.${indexCol.name})`;
-      } else if (isBuiltInRange(tableCol)) {
-        return `shape.${indexCol.name}.toPostgres(Postgres.Serializers.range)`;
-      } else {
-        return `col.${indexCol.name}`;
-      }
+  const tuples = columns
+    .map(({ tableColumn: tableCol }) => {
+      return columnToSlonikPrimitiveValue({
+        column: tableCol,
+        variableName: "col",
+      });
     })
     .join(", ");
 
@@ -565,7 +538,7 @@ function buildMultiColumnIndexFunction({
   connection,
   columns,
 }: ${getManyArgsName}): Promise<readonly Row[]> {
-  const tuples = columns.map((col) => [${mapTupleElements}]);
+  const tuples = columns.map((col) => [${tuples}]);
 
   const query = sql.type(row)\`
     SELECT \${aliasColumns("t")}

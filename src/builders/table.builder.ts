@@ -1,5 +1,10 @@
 import { TableDetails } from "extract-pg-schema";
-import { columnToZodType, isBuiltInRange, isJsonLike } from "./mappers";
+import {
+  columnToZodType,
+  isBuiltInRange,
+  isIntervalColumn,
+  isJsonLike,
+} from "./mappers";
 import { isDomainColumn, isEnumColumn } from "./column-types";
 
 type BuildArgs = {
@@ -34,8 +39,9 @@ function buildImports({ table }: { table: TableDetails }): string {
   const imports = DEFAULT_IMPORTS;
 
   const containsJsonColumn = table.columns.some(isJsonLike);
+  const containsIntervalColumn = table.columns.some(isIntervalColumn);
   const containsBuiltInRange = table.columns.some(isBuiltInRange);
-  if (containsJsonColumn || containsBuiltInRange) {
+  if (containsJsonColumn || containsIntervalColumn || containsBuiltInRange) {
     imports.push(`import * as Postgres from "../../postgres"`);
   }
 

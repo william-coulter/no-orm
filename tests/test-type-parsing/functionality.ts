@@ -1,6 +1,7 @@
 /** Tests that the functions from `model` execute without errors against the DB. */
 import { z } from "zod";
 import { Range } from "postgres-range";
+import { default as parseInterval } from "postgres-interval";
 import { pool } from "../slonik-test-connection";
 import * as Domains from "./expected/public/domains";
 import * as Ranges from "./expected/public/ranges";
@@ -25,7 +26,7 @@ await pool.connect(async (connection) => {
       a_float8: 3.14159265359,
       a_inet: "192.168.0.1",
       a_int: 2147483647,
-      a_interval: "1 year 2 months 3 days",
+      a_interval: parseInterval("1 year 2 mons 3 days 04:05:06"),
       a_json: { hello: "world" },
       a_jsonb: { type: "example" },
       a_line: "{1,2,3}",
@@ -100,7 +101,7 @@ await pool.connect(async (connection) => {
       a_float8: 2.71828182846,
       a_inet: "10.0.0.1",
       a_int: -2147483648,
-      a_interval: "3 days 4 hours 5 minutes",
+      a_interval: parseInterval("04:00:00"),
       a_json: ["foo", 42, null],
       a_jsonb: { updated: true, count: 5 },
       a_line: "{4,5,6}",

@@ -22,7 +22,7 @@ export const row = z.object({
   a_float8: z.number(),
   a_inet: z.string(),
   a_int: z.number(),
-  a_interval: z.any(),
+  a_interval: Postgres.Schemas.interval,
   a_json: Postgres.Schemas.json,
   a_jsonb: Postgres.Schemas.json,
   a_line: z.any(),

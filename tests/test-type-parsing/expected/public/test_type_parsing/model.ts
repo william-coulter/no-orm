@@ -30,7 +30,7 @@ export type Create = {
   a_float8: number;
   a_inet: string;
   a_int: number;
-  a_interval: any;
+  a_interval: Postgres.Types.Interval;
   a_json: Postgres.Types.Json;
   a_jsonb: Postgres.Types.Json;
   a_line: any;
@@ -90,7 +90,7 @@ export async function createMany({
     shape.a_float8,
     shape.a_inet,
     shape.a_int,
-    shape.a_interval,
+    shape.a_interval.toPostgres(),
     JSON.stringify(shape.a_json),
     JSON.stringify(shape.a_jsonb),
     shape.a_line,
@@ -234,7 +234,7 @@ export type Update = {
   a_float8: number;
   a_inet: string;
   a_int: number;
-  a_interval: any;
+  a_interval: Postgres.Types.Interval;
   a_json: Postgres.Types.Json;
   a_jsonb: Postgres.Types.Json;
   a_line: any;
@@ -295,7 +295,7 @@ export function updateMany({
     newRow.a_float8,
     newRow.a_inet,
     newRow.a_int,
-    newRow.a_interval,
+    newRow.a_interval.toPostgres(),
     JSON.stringify(newRow.a_json),
     JSON.stringify(newRow.a_jsonb),
     newRow.a_line,

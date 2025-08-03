@@ -13,6 +13,7 @@ function buildImports(): string {
   const imports = [
     `import { z } from "zod"`,
     `import { Range } from "postgres-range"`,
+    `import { IPostgresInterval } from "postgres-interval"`,
   ];
 
   return imports.join(";\n");
@@ -29,6 +30,31 @@ function buildSchemas(): string {
       z.array(json),
       z.record(json),
     ]),
+  );
+
+  export const interval = z.custom<IPostgresInterval>(
+    (val) => {
+      if (typeof val !== "object" || val === null) return false;
+
+      const obj = val as Record<string, unknown>;
+
+      return (
+        typeof obj.years === "number" &&
+        typeof obj.months === "number" &&
+        typeof obj.days === "number" &&
+        typeof obj.hours === "number" &&
+        typeof obj.minutes === "number" &&
+        typeof obj.seconds === "number" &&
+        typeof obj.milliseconds === "number" &&
+        typeof obj.toPostgres === "function" &&
+        typeof obj.toISO === "function" &&
+        typeof obj.toISOString === "function" &&
+        typeof obj.toISOStringShort === "function"
+      );
+    },
+    {
+      message: "Expected a IPostgresInterval",
+    },
   );
   
   export const int4range = z.custom<Range<number>>(
@@ -96,6 +122,8 @@ function buildTypes(): string {
     | null
     | Json[]
     | { [key: string]: Json };
+
+  export type Interval = z.infer<typeof Schemas.interval>;
 
   export type Int4range = z.infer<typeof Schemas.int4range>;
 
