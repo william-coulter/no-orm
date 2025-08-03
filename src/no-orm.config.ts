@@ -8,12 +8,12 @@ export type NoOrmConfig = {
    * A Postgres connection string that `no-orm` will read from to generate outputs.
    * E.g `postgres://postgres:postgres@localhost:5432/postgres`.
    */
-  postgres_connection_string: string;
+  readonly postgres_connection_string: string;
 
   /**
    * The directory where `no-orm` will save its generated outputs.
    */
-  output_directory: string;
+  readonly output_directory: string;
 };
 
 /** The parser for `no-orm` config. */
