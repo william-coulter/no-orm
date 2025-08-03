@@ -157,7 +157,10 @@ function buildCreateManyFunction({
 
   const tuples = createColumns
     .map((col) =>
-      columnToSlonikPrimitiveValue({ column: col, variableName: "shape" }),
+      columnToSlonikPrimitiveValue({
+        column: col,
+        variableName: `shape.${col.name}`,
+      }),
     )
     .join(`,\n    `);
   const unnestTypes = createColumns
@@ -268,7 +271,10 @@ function buildUpdateManyFunction({
 
   const tuples = primaryKeyAndUpdatableColumns
     .map((col) =>
-      columnToSlonikPrimitiveValue({ column: col, variableName: "newRow" }),
+      columnToSlonikPrimitiveValue({
+        column: col,
+        variableName: `newRow.${col.name}`,
+      }),
     )
     .join(`,\n    `);
 
@@ -431,8 +437,7 @@ function buildSingleColumnIndexFunction({
   const columnTypescriptType = columnToTypescriptType(tableColumn);
 
   const getManyArgsName = `GetManyBy${columnNamePascalCase}Args`;
-  // FIXME: Just make me `columns`.
-  const getManyArgumentName = `${columnName}_list`;
+  const getManyArgumentName = "columns";
   const getManyArgs = `export type ${getManyArgsName} = BaseArgs & {
     ${getManyArgumentName}: ${columnTypescriptType}[];
   }`;
@@ -446,11 +451,11 @@ function buildSingleColumnIndexFunction({
     connection,
     ${getManyArgumentName},
   }: ${getManyArgsName}): Promise<readonly Row[]> {
-  const parsedList = ${getManyArgumentName}.map(col => ${slonikPrimitiveMapping});
+  const list = ${getManyArgumentName}.map(col => ${slonikPrimitiveMapping});
   return connection.any(sql.type(row)\`
     SELECT \${columnsFragment}
     FROM \${tableFragment}
-    WHERE ${columnName} = ANY(\${sql.array(parsedList, "${pgTypeToUnnestType(tableColumn)}")})\`);
+    WHERE ${columnName} = ANY(\${sql.array(list, "${pgTypeToUnnestType(tableColumn)}")})\`);
   }`;
 
   const getArgsName = `GetBy${columnNamePascalCase}Args`;
@@ -525,7 +530,7 @@ function buildMultiColumnIndexFunction({
     .map(({ tableColumn: tableCol }) => {
       return columnToSlonikPrimitiveValue({
         column: tableCol,
-        variableName: "col",
+        variableName: `col.${tableCol.name}`,
       });
     })
     .join(", ");

@@ -89,8 +89,6 @@ export function columnToTypescriptType(column: TableColumn): string {
 type SerialiseToUnnestValueArguments = {
   column: TableColumn;
   variableName: string;
-  /** For index columns, this is different to the table column name */
-  columnNameOverride?: string;
 };
 
 /**
@@ -101,15 +99,15 @@ export function columnToSlonikPrimitiveValue({
   variableName,
 }: SerialiseToUnnestValueArguments): string {
   if (isDateLike(column)) {
-    return `${variableName}.${column.name}.toISOString()`;
+    return `${variableName}.toISOString()`;
   } else if (isJsonLike(column)) {
-    return `JSON.stringify(${variableName}.${column.name})`;
+    return `JSON.stringify(${variableName})`;
   } else if (isIntervalColumn(column)) {
-    return `${variableName}.${column.name}.toPostgres()`;
+    return `${variableName}.toPostgres()`;
   } else if (isBuiltInRange(column)) {
-    return `${variableName}.${column.name}.toPostgres(Postgres.Serializers.range)`;
+    return `${variableName}.toPostgres(Postgres.Serializers.range)`;
   } else {
-    return `${variableName}.${column.name}`;
+    return `${variableName}`;
   }
 }
 

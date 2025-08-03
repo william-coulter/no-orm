@@ -157,18 +157,18 @@ async function _delete({ connection, id }: DeleteArgs): Promise<void> {
 export { _delete as delete };
 
 export type GetManyByPenguinArgs = BaseArgs & {
-  penguin_list: PenguinsRow["id"][];
+  columns: PenguinsRow["id"][];
 };
 
 export async function getManyByPenguin({
   connection,
-  penguin_list,
+  columns,
 }: GetManyByPenguinArgs): Promise<readonly Row[]> {
-  const parsedList = penguin_list.map((penguin) => penguin);
+  const list = columns.map((col) => col);
   return connection.any(sql.type(row)`
     SELECT ${columnsFragment}
     FROM ${tableFragment}
-    WHERE penguin = ANY(${sql.array(parsedList, "int4")})`);
+    WHERE penguin = ANY(${sql.array(list, "int4")})`);
 }
 
 export type GetByPenguinArgs = BaseArgs & {
@@ -179,9 +179,6 @@ export async function getByPenguin({
   connection,
   penguin,
 }: GetByPenguinArgs): Promise<readonly Row[]> {
-  const result = await getManyByPenguin({
-    connection,
-    penguin_list: [penguin],
-  });
+  const result = await getManyByPenguin({ connection, columns: [penguin] });
   return result;
 }

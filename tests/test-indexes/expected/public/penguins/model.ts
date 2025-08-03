@@ -199,18 +199,18 @@ export async function getBySpeciesAndDateOfBirth({
 }
 
 export type GetManyByNameArgs = BaseArgs & {
-  name_list: string[];
+  columns: string[];
 };
 
 export async function getManyByName({
   connection,
-  name_list,
+  columns,
 }: GetManyByNameArgs): Promise<readonly Row[]> {
-  const parsedList = name_list.map((name) => name);
+  const list = columns.map((col) => col);
   return connection.any(sql.type(row)`
     SELECT ${columnsFragment}
     FROM ${tableFragment}
-    WHERE name = ANY(${sql.array(parsedList, "text")})`);
+    WHERE name = ANY(${sql.array(list, "text")})`);
 }
 
 export type GetByNameArgs = BaseArgs & {
@@ -221,6 +221,6 @@ export async function getByName({
   connection,
   name,
 }: GetByNameArgs): Promise<Row | null> {
-  const result = await getManyByName({ connection, name_list: [name] });
+  const result = await getManyByName({ connection, columns: [name] });
   return result[0] ?? null;
 }
