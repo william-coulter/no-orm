@@ -49,6 +49,8 @@ ${buildGetArgsType()}
 
 ${buildGetFunction()}
 
+${buildGetManyMapFunction()}
+
 ${buildUpdateType({ table, updatableColumns })}
 
 ${buildUpdateManyArgsType()}
@@ -233,6 +235,16 @@ function buildGetFunction(): string {
   return `export async function get({ connection, id }: GetArgs): Promise<Row> {
   const result = await getMany({ connection, ids: [id] });
   return result[0];
+}`;
+}
+
+function buildGetManyMapFunction(): string {
+  return `export async function getManyMap({
+  connection,
+  ids,
+}: GetManyArgs): Promise<Map<Id, Row>> {
+  const rows = await getMany({ connection, ids });
+  return new Map<Id, Row>(rows.map((row) => [row.id, row]));
 }`;
 }
 
@@ -476,6 +488,17 @@ function buildSingleColumnIndexFunction({
     return ${getFunctionReturnStatement};
   }`;
 
+  const reference = getColumnReference(tableColumn);
+  const getManyMapFunction = reference
+    ? `export async function getManyByPenguinMap({
+  connection,
+  columns,
+}: GetManyByPenguinArgs): Promise<Map<${columnTypescriptType}, Row>> {
+  const rows = await getManyByPenguin({ connection, columns });
+  return new Map<${columnTypescriptType}, Row>(rows.map((row) => [row.${columnName}, row]));
+}`
+    : "";
+
   return `
   ${getManyArgs}
 
@@ -483,7 +506,9 @@ function buildSingleColumnIndexFunction({
 
   ${getArgs}
 
-  ${getFunction}`;
+  ${getFunction}
+  
+  ${getManyMapFunction}`;
 }
 
 function buildMultiColumnIndexFunction({

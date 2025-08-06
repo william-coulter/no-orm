@@ -1,11 +1,12 @@
 # TODO List:
 
-- Add `*Map` functions. <!-- STARTHERE: Do this. -->
+- Add `find*` functions.
 - Test readonly and omitted columns.
 - Add logger (warn on unknown types, add loading spinner).
 - Address all `TODO`s / `FIXME`s in the code.
 - Test Primary Key not called "id".
 - Ensure all types from gen functions are exported.
+- Handle UNIQUE multi-column index.
 
 # No ORM!
 

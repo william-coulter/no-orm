@@ -80,6 +80,14 @@ export async function get({ connection, id }: GetArgs): Promise<Row> {
   return result[0];
 }
 
+export async function getManyMap({
+  connection,
+  ids,
+}: GetManyArgs): Promise<Map<Id, Row>> {
+  const rows = await getMany({ connection, ids });
+  return new Map<Id, Row>(rows.map((row) => [row.id, row]));
+}
+
 export type Update = {
   penguin: PenguinsRow["id"];
   method: string;

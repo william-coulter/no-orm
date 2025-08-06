@@ -80,6 +80,14 @@ export async function get({ connection, id }: GetArgs): Promise<Row> {
   return result[0];
 }
 
+export async function getManyMap({
+  connection,
+  ids,
+}: GetManyArgs): Promise<Map<Id, Row>> {
+  const rows = await getMany({ connection, ids });
+  return new Map<Id, Row>(rows.map((row) => [row.id, row]));
+}
+
 export type Update = {
   penguin: PenguinsRow["id"];
   method: string;
@@ -181,4 +189,12 @@ export async function getByPenguin({
 }: GetByPenguinArgs): Promise<readonly Row[]> {
   const result = await getManyByPenguin({ connection, columns: [penguin] });
   return result;
+}
+
+export async function getManyByPenguinMap({
+  connection,
+  columns,
+}: GetManyByPenguinArgs): Promise<Map<PenguinsRow["id"], Row>> {
+  const rows = await getManyByPenguin({ connection, columns });
+  return new Map<PenguinsRow["id"], Row>(rows.map((row) => [row.penguin, row]));
 }

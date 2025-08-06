@@ -19,6 +19,11 @@ await pool.connect(async (connection) => {
     id: create.id,
   });
 
+  await PenguinsModel.getManyMap({
+    connection,
+    ids: [create.id],
+  });
+
   const update = await PenguinsModel.update({
     connection,
     newRow: { ...read, waddle_speed_kph: 0.6, favourite_snack: "Pavlova" },
