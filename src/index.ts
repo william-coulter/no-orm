@@ -6,7 +6,7 @@ import { mkdir, writeFile } from "fs/promises";
 import { Command } from "commander";
 import { format, resolveConfig, type Options } from "prettier";
 
-import { noOrmConfigSchema } from "./no-orm.config";
+import { noOrmConfigSchema } from "./config";
 import * as PostgresBuilder from "./builders/postgres.builder";
 import * as EnumsBuilder from "./builders/enums.builder";
 import * as DomainsBuilder from "./builders/domains.builder";
