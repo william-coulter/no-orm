@@ -226,6 +226,22 @@ export async function getManyMap({
   return new Map<Id, Row>(rows.map((row) => [row.id, row]));
 }
 
+export type FindManyArgs = BaseArgs & { ids: number[] };
+
+export async function findMany({
+  connection,
+  ids,
+}: FindManyArgs): Promise<readonly Row[]> {
+  return getMany({ connection, ids: ids as Id[] });
+}
+
+export type FindArgs = BaseArgs & { id: number };
+
+export async function find({ connection, id }: FindArgs): Promise<Row | null> {
+  const result = await findMany({ connection, ids: [id] });
+  return result[0] ?? null;
+}
+
 export type Update = {
   a_bigint: bigint;
   a_bigserial: bigint;

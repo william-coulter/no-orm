@@ -12,6 +12,7 @@ import {
   isJsonLike,
   pgTypeToUnnestType,
   columnToSlonikPrimitiveValue,
+  mapPostgresTypeToTypescriptType,
 } from "./mappers";
 import { getColumnReference, snakeToPascalCase } from "./helpers";
 import { isDomainColumn, isEnumColumn } from "./column-types";
@@ -26,6 +27,8 @@ export async function build({ table }: BuildArgs): Promise<string> {
 
   // TODO: Also include any user-supplied readOnly, or omitted columns.
   const updatableColumns: TableColumn[] = getUpdatableColumns({ table });
+
+  const primaryKey = getPrimaryKey(table);
 
   return `${buildImports({ table })}
 
@@ -50,6 +53,8 @@ ${buildGetArgsType()}
 ${buildGetFunction()}
 
 ${buildGetManyMapFunction()}
+
+${buildFindFunctions({ primaryKey })}
 
 ${buildUpdateType({ table, updatableColumns })}
 
@@ -245,6 +250,32 @@ function buildGetManyMapFunction(): string {
 }: GetManyArgs): Promise<Map<Id, Row>> {
   const rows = await getMany({ connection, ids });
   return new Map<Id, Row>(rows.map((row) => [row.id, row]));
+}`;
+}
+
+function buildFindFunctions({
+  primaryKey,
+}: {
+  primaryKey: TableColumn;
+}): string {
+  const primaryKeyTypescriptType = mapPostgresTypeToTypescriptType(
+    primaryKey.type.fullName,
+  );
+
+  return `export type FindManyArgs = BaseArgs & { ids: ${primaryKeyTypescriptType}[] };
+
+export async function findMany({
+  connection,
+  ids,
+}: FindManyArgs): Promise<readonly Row[]> {
+  return getMany({ connection, ids: ids as Id[] });
+}
+
+export type FindArgs = BaseArgs & { id: ${primaryKeyTypescriptType} };
+
+export async function find({ connection, id }: FindArgs): Promise<Row | null> {
+  const result = await findMany({ connection, ids: [id] });
+  return result[0] ?? null;
 }`;
 }
 

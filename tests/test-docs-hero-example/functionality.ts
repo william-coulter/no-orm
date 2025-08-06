@@ -24,6 +24,16 @@ await pool.connect(async (connection) => {
     ids: [create.id],
   });
 
+  await PenguinsModel.find({
+    connection,
+    id: 0,
+  });
+
+  await PenguinsModel.find({
+    connection,
+    id: create.id,
+  });
+
   const update = await PenguinsModel.update({
     connection,
     newRow: { ...read, waddle_speed_kph: 0.6, favourite_snack: "Pavlova" },
