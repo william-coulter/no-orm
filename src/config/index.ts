@@ -3,7 +3,7 @@ import {
   PostgresSchema,
   SchemaConfigValue,
   schemaConfigsSchema,
-} from "./helpers";
+} from "./schema";
 
 /**
  * The configuration for the no-orm CLI tool.
