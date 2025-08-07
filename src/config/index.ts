@@ -1,9 +1,5 @@
 import { z } from "zod";
-import {
-  PostgresSchema,
-  SchemaConfigValue,
-  schemaConfigsSchema,
-} from "./schema";
+import { DatabaseSchemaConfig, schemaConfigsSchema } from "./schema";
 
 /**
  * The configuration for the no-orm CLI tool.
@@ -17,13 +13,16 @@ export type NoOrmConfig = {
 
   /**
    * The directory where `no-orm` will save its generated outputs.
+   * TODO: Make me optional.
    */
   readonly output_directory: string;
 
   /**
-   * A `Record` of schemas in your Postgres schema to their config.
+   * Define custom behaviour for how `no-orm` reads your database.
+   * E.g ignore tables, mark columns as read-only, etc.
+   * TODO: Make me optional.
    */
-  readonly schema_configs: Record<PostgresSchema, SchemaConfigValue>;
+  readonly database_schema_config: DatabaseSchemaConfig;
 };
 
 /** The parser for `no-orm` config. */
