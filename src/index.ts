@@ -13,6 +13,7 @@ import * as DomainsBuilder from "./builders/domains.builder";
 import * as RangesBuilder from "./builders/ranges.builder";
 import * as TableBuilder from "./builders/table.builder";
 import * as ModelBuilder from "./builders/model.builder";
+import { parseForDatabase } from "./config/parser";
 
 const program = new Command();
 
@@ -50,6 +51,11 @@ async function run({ configPath }: RunArgs) {
     const result = await extractSchemas({
       connectionString: config.postgres_connection_string,
     });
+    // STARTHERE: What am I doing?
+    const parsedDatabaseConfig = parseForDatabase(
+      config.schema_configs,
+      result,
+    );
 
     const schemaNames = Object.keys(result);
     for (const schemaName of schemaNames) {
@@ -152,6 +158,7 @@ type RunArgs = {
 run({ configPath: options.configPath });
 
 /** Will format the file according to the prettier config. */
+// FIXME: Format the entire `no-orm` directory once at the end.
 async function prettierFormat(
   code: string,
   config: Options | null,

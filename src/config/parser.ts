@@ -1,6 +1,24 @@
-import { Schema, TableDetails } from "extract-pg-schema";
+import { Schema, TableColumn, TableDetails } from "extract-pg-schema";
 import { DatabaseSchemaConfig, SchemaConfig, TableConfig } from "./schema";
 import * as logger from "../logger";
+
+export type ParsedDatabaseSchemaConfig = Ignorable<{
+  schema_configs: Map<string, ParsedSchemaConfig>;
+}>;
+
+export type ParsedSchemaConfig = Ignorable<{
+  table_configs: Map<string, ParsedTableConfig>;
+}>;
+
+export type ParsedTableConfig = Ignorable<{
+  column_configs: Map<string, ParsedColumnConfig>;
+}>;
+
+export type ParsedColumnConfig = Ignorable<{
+  readonly: boolean;
+}>;
+
+type Ignorable<T> = { ignore: true } | ({ ignore: false } & T);
 
 /**
  * Parses the user-supplied config and filters out any schemas that do not exist in the database.
@@ -78,36 +96,65 @@ export function parseForSchema(
 export function parseForTable(
   config: TableConfig,
   table: TableDetails,
-): TableConfig | null {
-  const userProvidedColumns = Object.keys(config.column_configs);
-  const databaseColumns = new Set(table.columns.map((column) => column.name));
-
-  if (userProvidedColumns.length === 0) {
-    return null;
+): ParsedTableConfig {
+  if (config.ignore === true) {
+    return { ignore: true };
   }
 
-  const matchingColumns = new Set(
-    userProvidedColumns.filter((table) => {
-      const columnExists = databaseColumns.has(table);
-      if (!columnExists) {
+  const columnsMap = new Map<string, TableColumn>(
+    table.columns.map((col) => [col.name, col]),
+  );
+  const filteredConfig = Object.entries(config.column_configs).filter(
+    ([columnName, columnConfig]) => {
+      const column = columnsMap.get(columnName);
+      if (!column) {
         logger.warn(
-          `Provided database_schema_config column '${table}' provided in config does not exist in the schema '${schema.name}'.`,
+          `Provided database_schema_config column '${column}' does not exist in the table '${table.informationSchemaValue.table_schema}.${table.name}'.`,
         );
+        return false;
       }
-      return columnExists;
+
+      if (columnConfig.ignore === true || columnConfig.readonly === true) {
+        const hasDefault = column.defaultValue !== null;
+        const isNullable = column.isNullable;
+        if (!isNullable && !hasDefault) {
+          throw new InvalidIgnoredColumn(column);
+        }
+      }
+
+      return true;
+    },
+  );
+
+  const configMap = new Map<string, ParsedColumnConfig>(
+    filteredConfig.map(([key, columnConfig]) => {
+      if (columnConfig.ignore === true) {
+        return [key, { ignore: true }];
+      } else {
+        const parsedColumnConfig: ParsedColumnConfig = {
+          ignore: false,
+          readonly:
+            columnConfig.readonly === undefined ? false : columnConfig.readonly,
+        };
+
+        return [key, parsedColumnConfig];
+      }
     }),
   );
 
-  const filteredColumnConfigs = Object.fromEntries(
-    Object.entries(config.column_configs).filter(([key]) =>
-      matchingColumns.has(key),
-    ),
-  );
-
-  // STARTHERE: Throw an exception if the column config has `readonly` (or `ignore`?) but the column has no default.
-
   return {
-    ...config,
-    column_configs: filteredColumnConfigs,
+    ignore: false,
+    column_configs: configMap,
   };
+}
+
+class InvalidIgnoredColumn extends Error {
+  constructor(column: TableColumn) {
+    const name = column.name;
+    const table = column.informationSchemaValue.table_name;
+    const schema = column.informationSchemaValue.table_schema;
+    super(
+      `Cannot ignore or set column as readonly when column is not nullable and has no default. Column '${schema}.${table}.${name}'`,
+    );
+  }
 }
