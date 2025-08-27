@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DatabaseSchemaConfig, schemaConfigsSchema } from "./schema";
+import { DatabaseSchemaConfig, databaseSchemaConfigSchema } from "./schema";
 
 /**
  * The configuration for the no-orm CLI tool.
@@ -29,5 +29,5 @@ export type NoOrmConfig = {
 export const noOrmConfigSchema = z.object({
   postgres_connection_string: z.string(),
   output_directory: z.string(),
-  schema_configs: schemaConfigsSchema,
+  schema_configs: databaseSchemaConfigSchema,
 });

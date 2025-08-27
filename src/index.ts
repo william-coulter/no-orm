@@ -50,9 +50,10 @@ async function run({ configPath }: RunArgs) {
       connectionString: config.postgres_connection_string,
     });
 
-    const parsedDatabaseConfig =
-      parseForDatabase(config.schema_configs, result) ??
-      EmptyConfigs.parsedDatabaseConfig;
+    const parsedDatabaseConfig = parseForDatabase(
+      config.schema_configs,
+      result,
+    );
 
     const schemaNames = Object.keys(result);
     for (const schemaName of schemaNames) {

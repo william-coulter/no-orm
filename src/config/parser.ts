@@ -1,5 +1,6 @@
 import { Schema, TableColumn, TableDetails } from "extract-pg-schema";
 import { DatabaseSchemaConfig, SchemaConfig, TableConfig } from "./schema";
+import * as EmptyConfigs from "./empty";
 import * as logger from "../logger";
 
 export type ParsedDatabaseSchemaConfig = {
@@ -30,18 +31,20 @@ type Ignorable<T> = { ignore: true } | ({ ignore: false } & T);
  */
 export function parseForDatabase(
   config: DatabaseSchemaConfig,
-  schemas: Record<string, Schema>,
-): ParsedDatabaseSchemaConfig | null {
+  schemas: Schema[],
+): ParsedDatabaseSchemaConfig {
   const userProvidedSchemas = Object.keys(config.schema_configs);
-  const databaseSchemas = new Set(Object.keys(schemas));
+  const databaseSchemasMap = new Map<string, Schema>(
+    schemas.map((schema) => [schema.name, schema]),
+  );
 
   if (userProvidedSchemas.length === 0) {
-    return null;
+    return EmptyConfigs.parsedDatabaseConfig;
   }
 
   const matchingSchemas = new Set(
     userProvidedSchemas.filter((schema) => {
-      const schemaExists = databaseSchemas.has(schema);
+      const schemaExists = databaseSchemasMap.has(schema);
       if (!schemaExists) {
         logger.warn(
           `Provided database_schema_config schema '${schema}' does not exist in the database.`,
@@ -51,13 +54,18 @@ export function parseForDatabase(
     }),
   );
 
-  const filteredSchemaConfigs = Object.fromEntries(
-    Object.entries(config.schema_configs).filter(([key]) =>
-      matchingSchemas.has(key),
-    ),
+  const filteredSchemaConfigs = Object.entries(config.schema_configs).filter(
+    ([key]) => matchingSchemas.has(key),
   );
 
-  return { ...config, schema_configs: filteredSchemaConfigs };
+  const parsedSchemaConfigs = new Map<string, ParsedSchemaConfig>(
+    filteredSchemaConfigs.map(([schema, schemaConfig]) => [
+      schema,
+      parseForSchema(schemaConfig, databaseSchemasMap.get(schema)!),
+    ]),
+  );
+
+  return { ...config, schema_configs: parsedSchemaConfigs };
 }
 
 /**
@@ -67,16 +75,18 @@ export function parseForSchema(
   config: SchemaConfig,
   schema: Schema,
 ): ParsedSchemaConfig {
-  const userProvidedTables = Object.keys(config.table_configs);
-  const databaseTables = new Set(schema.tables.map((table) => table.name));
-
-  if (userProvidedTables.length === 0) {
-    return null;
+  if (config.ignore === true) {
+    return { ignore: true };
   }
+
+  const userProvidedTables = Object.keys(config.table_configs);
+  const databaseTablesMap = new Map<string, TableDetails>(
+    schema.tables.map((table) => [table.name, table]),
+  );
 
   const matchingTables = new Set(
     userProvidedTables.filter((table) => {
-      const tableExists = databaseTables.has(table);
+      const tableExists = databaseTablesMap.has(table);
       if (!tableExists) {
         logger.warn(
           `Provided database_schema_config table '${table}' does not exist in the schema '${schema.name}'.`,
@@ -86,13 +96,18 @@ export function parseForSchema(
     }),
   );
 
-  const filteredTableConfigs = Object.fromEntries(
-    Object.entries(config.table_configs).filter(([key]) =>
-      matchingTables.has(key),
-    ),
+  const filteredTableConfigs = Object.entries(config.table_configs).filter(
+    ([key]) => matchingTables.has(key),
   );
 
-  return { ...config, table_configs: filteredTableConfigs };
+  const parsedTableConfigs = new Map<string, ParsedTableConfig>(
+    filteredTableConfigs.map(([table, config]) => [
+      table,
+      parseForTable(config, databaseTablesMap.get(table)!),
+    ]),
+  );
+
+  return { ignore: false, table_configs: parsedTableConfigs };
 }
 
 /**
