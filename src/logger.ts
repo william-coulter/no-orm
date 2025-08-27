@@ -1,7 +1,7 @@
 import chalk from "chalk";
 
 export function info(message: string): void {
-  console.error(chalk.blue(message));
+  console.info(chalk.blue(message));
 }
 
 export function warn(message: string): void {
@@ -10,4 +10,8 @@ export function warn(message: string): void {
 
 export function error(message: string): void {
   console.error(chalk.red(`💀 [ERROR]: ${message}`));
+}
+
+export function debug(message: string): void {
+  console.debug(chalk.grey(message));
 }
