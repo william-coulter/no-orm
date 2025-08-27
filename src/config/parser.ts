@@ -2,13 +2,18 @@ import { Schema, TableColumn, TableDetails } from "extract-pg-schema";
 import { DatabaseSchemaConfig, SchemaConfig, TableConfig } from "./schema";
 import * as logger from "../logger";
 
-export type ParsedDatabaseSchemaConfig = Ignorable<{
+export type ParsedDatabaseSchemaConfig = {
   schema_configs: Map<string, ParsedSchemaConfig>;
-}>;
+};
 
 export type ParsedSchemaConfig = Ignorable<{
   table_configs: Map<string, ParsedTableConfig>;
 }>;
+
+export const emptyParsedSchemaConfig: ParsedSchemaConfig = {
+  ignore: false,
+  table_configs: new Map(),
+};
 
 export type ParsedTableConfig = Ignorable<{
   column_configs: Map<string, ParsedColumnConfig>;
@@ -26,7 +31,7 @@ type Ignorable<T> = { ignore: true } | ({ ignore: false } & T);
 export function parseForDatabase(
   config: DatabaseSchemaConfig,
   schemas: Record<string, Schema>,
-): DatabaseSchemaConfig | null {
+): ParsedDatabaseSchemaConfig | null {
   const userProvidedSchemas = Object.keys(config.schema_configs);
   const databaseSchemas = new Set(Object.keys(schemas));
 
@@ -61,7 +66,7 @@ export function parseForDatabase(
 export function parseForSchema(
   config: SchemaConfig,
   schema: Schema,
-): SchemaConfig | null {
+): ParsedSchemaConfig {
   const userProvidedTables = Object.keys(config.table_configs);
   const databaseTables = new Set(schema.tables.map((table) => table.name));
 

@@ -6,13 +6,11 @@ import { mkdir, writeFile } from "fs/promises";
 import { Command } from "commander";
 import { format, resolveConfig, type Options } from "prettier";
 
+import * as logger from "./logger";
 import { noOrmConfigSchema } from "./config";
 import * as PostgresBuilder from "./builders/postgres.builder";
-import * as EnumsBuilder from "./builders/enums.builder";
-import * as DomainsBuilder from "./builders/domains.builder";
-import * as RangesBuilder from "./builders/ranges.builder";
-import * as TableBuilder from "./builders/table.builder";
-import * as ModelBuilder from "./builders/model.builder";
+import * as SchemaParser from "./parsers/schema.parser";
+import * as EmptyConfigs from "./config/empty";
 import { parseForDatabase } from "./config/parser";
 
 const program = new Command();
@@ -51,97 +49,29 @@ async function run({ configPath }: RunArgs) {
     const result = await extractSchemas({
       connectionString: config.postgres_connection_string,
     });
-    // STARTHERE: What am I doing?
-    const parsedDatabaseConfig = parseForDatabase(
-      config.schema_configs,
-      result,
-    );
+
+    const parsedDatabaseConfig =
+      parseForDatabase(config.schema_configs, result) ??
+      EmptyConfigs.parsedDatabaseConfig;
 
     const schemaNames = Object.keys(result);
     for (const schemaName of schemaNames) {
       const schema = result[schemaName];
+      const schemaConfig =
+        parsedDatabaseConfig.schema_configs.get(schema.name) ??
+        EmptyConfigs.parsedSchemaConfig;
 
-      const schemaOutputPath = path.join(config.output_directory, schemaName);
-      await mkdir(schemaOutputPath, {
-        recursive: true,
-      });
-
-      const enumsContent = await EnumsBuilder.build({
-        schema,
-      });
-      const formattedEnumsContent = await prettierFormat(
-        enumsContent,
-        prettierConfig,
-      );
-      await writeFile(
-        path.join(schemaOutputPath, "enums.ts"),
-        formattedEnumsContent,
-        "utf-8",
-      );
-
-      const domainsContent = await DomainsBuilder.build({
-        schema,
-      });
-      const formattedDomainsContent = await prettierFormat(
-        domainsContent,
-        prettierConfig,
-      );
-      await writeFile(
-        path.join(schemaOutputPath, "domains.ts"),
-        formattedDomainsContent,
-        "utf-8",
-      );
-
-      const rangesContent = await RangesBuilder.build({
-        schema,
-      });
-      const formattedRangesContent = await prettierFormat(
-        rangesContent,
-        prettierConfig,
-      );
-      await writeFile(
-        path.join(schemaOutputPath, "ranges.ts"),
-        formattedRangesContent,
-        "utf-8",
-      );
-
-      const tables = schema.tables;
-      for (const table of tables) {
-        const outputPath = path.join(schemaOutputPath, table.name);
-        await mkdir(outputPath, {
-          recursive: true,
-        });
-
-        const tableFileContent = await TableBuilder.build({
-          table,
-        });
-
-        const formattedTableFileContent = await prettierFormat(
-          tableFileContent,
-          prettierConfig,
-        );
-
-        await writeFile(
-          path.join(outputPath, "table.ts"),
-          formattedTableFileContent,
-          "utf-8",
-        );
-
-        const modelFileContent = await ModelBuilder.build({
-          table,
-        });
-
-        const formattedModelFileContent = await prettierFormat(
-          modelFileContent,
-          prettierConfig,
-        );
-
-        await writeFile(
-          path.join(outputPath, "model.ts"),
-          formattedModelFileContent,
-          "utf-8",
-        );
+      if (schemaConfig.ignore === true) {
+        logger.debug(`Schema '${schema.name}' is ignored, skipping...`);
+        continue;
       }
+
+      await SchemaParser.parse({
+        schema: schema,
+        output_path: config.output_directory,
+        config: schemaConfig,
+        prettier_config: prettierConfig,
+      });
     }
   } catch (err) {
     // TODO: On error, ensure any changes made to the `no-orm` directory are left untouched.
@@ -159,7 +89,7 @@ run({ configPath: options.configPath });
 
 /** Will format the file according to the prettier config. */
 // FIXME: Format the entire `no-orm` directory once at the end.
-async function prettierFormat(
+export async function prettierFormat(
   code: string,
   config: Options | null,
 ): Promise<string> {
