@@ -16,21 +16,39 @@ import {
 } from "./mappers";
 import { getColumnReference, snakeToPascalCase } from "./helpers";
 import { isDomainColumn, isEnumColumn } from "./column-types";
+import { NonIgnoredConfig } from "../parsers/table.parser";
 
 type BuildArgs = {
   table: TableDetails;
+  config: NonIgnoredConfig;
 };
 
-export async function build({ table }: BuildArgs): Promise<string> {
-  // TODO: Also include any user-supplied readOnly, or omitted columns.
-  const createColumns: TableColumn[] = getCreateColumns({ table });
+export async function build({ table, config }: BuildArgs): Promise<string> {
+  const nonIgnoredColumns = table.columns.filter(
+    (col) => !config.ignored_columns.has(col.name),
+  );
 
-  // TODO: Also include any user-supplied readOnly, or omitted columns.
-  const updatableColumns: TableColumn[] = getUpdatableColumns({ table });
+  const nonIgnoredColumnSet: Set<string | null> = new Set(
+    nonIgnoredColumns.map((col) => col.name),
+  );
+  const nonIgnoredIndices = table.indices.filter((index) => {
+    const allColumnsNonIgnored = index.columns.every((col) =>
+      nonIgnoredColumnSet.has(col.name),
+    );
+    // If at least 1 column in the index is ignored, we want to ignore the index.
+    return allColumnsNonIgnored;
+  });
+
+  const createColumns: TableColumn[] = getCreateColumns({ table, config });
+
+  const updatableColumns: TableColumn[] = getUpdatableColumns({
+    table,
+    config,
+  });
 
   const primaryKey = getPrimaryKey(table);
 
-  return `${buildImports({ table })}
+  return `${buildImports({ columns: nonIgnoredColumns })}
 
 ${buildBaseArgsType()}
 
@@ -46,7 +64,7 @@ ${buildCreateFunction()}
 
 ${buildGetManyArgsType()}
 
-${buildGetManyFunction({ table })}
+${buildGetManyFunction({ primaryKey })}
 
 ${buildGetArgsType()}
 
@@ -56,11 +74,11 @@ ${buildGetManyMapFunction()}
 
 ${buildFindFunctions({ primaryKey })}
 
-${buildUpdateType({ table, updatableColumns })}
+${buildUpdateType({ primaryKey, updatableColumns })}
 
 ${buildUpdateManyArgsType()}
 
-${buildUpdateManyFunction({ table, updatableColumns })}
+${buildUpdateManyFunction({ primaryKey, updatableColumns })}
 
 ${buildUpdateArgsType()}
 
@@ -68,46 +86,60 @@ ${buildUpdateFunction()}
 
 ${buildDeleteManyArgsType()}
 
-${buildDeleteManyFunction({ table })}
+${buildDeleteManyFunction({ primaryKey })}
 
 ${buildDeleteArgsType()}
 
 ${buildDeleteFunction()}
 
-${buildIndexFunctions({ table })}
+${buildIndexFunctions({ indices: nonIgnoredIndices, columns: nonIgnoredColumns })}
 `;
 }
 
 /** Returns columns that are required to create a row in this table. */
-function getCreateColumns({ table }: { table: TableDetails }): TableColumn[] {
-  return table.columns.filter((col) => !col.isPrimaryKey);
+function getCreateColumns({
+  table,
+  config,
+}: {
+  table: TableDetails;
+  config: NonIgnoredConfig;
+}): TableColumn[] {
+  return table.columns
+    .filter((col) => !col.isPrimaryKey)
+    .filter((col) => !config.ignored_columns.has(col.name))
+    .filter((col) => !config.readonly_columns.has(col.name));
 }
 
 /** Returns columns that are required to update a row in this table. */
 function getUpdatableColumns({
   table,
+  config,
 }: {
   table: TableDetails;
+  config: NonIgnoredConfig;
 }): TableColumn[] {
-  return table.columns.filter((col) => !col.isPrimaryKey);
+  return table.columns
+    .filter((col) => !col.isPrimaryKey)
+    .filter((col) => !config.ignored_columns.has(col.name))
+    .filter((col) => !config.readonly_columns.has(col.name));
 }
 
 /** Builds import statements. */
-function buildImports({ table }: { table: TableDetails }): string {
+function buildImports({ columns }: { columns: TableColumn[] }): string {
   const DEFAULT_IMPORTS: string[] = [
     `import { type CommonQueryMethods, sql } from "slonik"`,
     `import { type Id, type Row, aliasColumns, columnsFragment, row, tableFragment } from "./table"`,
   ];
   const imports = DEFAULT_IMPORTS;
 
-  const containsJsonColumn = table.columns.some(isJsonLike);
-  const containsIntervalColumn = table.columns.some(isIntervalColumn);
-  const containsBuiltInRange = table.columns.some(isBuiltInRange);
+  const containsJsonColumn = columns.some(isJsonLike);
+  const containsIntervalColumn = columns.some(isIntervalColumn);
+  const containsBuiltInRange = columns.some(isBuiltInRange);
   if (containsJsonColumn || containsIntervalColumn || containsBuiltInRange) {
     imports.push(`import * as Postgres from "../../postgres"`);
   }
 
-  const tableReferences: ColumnReference[] = table.columns
+  const tableReferences: ColumnReference[] = columns
     .map(getColumnReference)
     .filter((reference) => reference !== null);
 
@@ -117,17 +149,17 @@ function buildImports({ table }: { table: TableDetails }): string {
     );
   });
 
-  const enums = table.columns.filter(isEnumColumn);
+  const enums = columns.filter(isEnumColumn);
   if (enums.length > 0) {
     imports.push(`import * as Enums from "../enums"`);
   }
 
-  const domains = table.columns.filter(isDomainColumn);
+  const domains = columns.filter(isDomainColumn);
   if (domains.length > 0) {
     imports.push(`import * as Domains from "../domains"`);
   }
 
-  const ranges = table.columns.filter((col) => isBuiltInRange(col));
+  const ranges = columns.filter((col) => isBuiltInRange(col));
   if (ranges.length > 0) {
     imports.push(`import * as Ranges from "../ranges"`);
   }
@@ -213,10 +245,11 @@ function buildGetManyArgsType(): string {
   return `export type GetManyArgs = BaseArgs & { ids: Id[] };`;
 }
 
-function buildGetManyFunction({ table }: { table: TableDetails }): string {
-  const primaryKey = getPrimaryKey(table);
-
-  // FIXME: Perhaps this should be an argument?
+function buildGetManyFunction({
+  primaryKey,
+}: {
+  primaryKey: TableColumn;
+}): string {
   const primaryKeySqlType = pgTypeToUnnestType(primaryKey);
 
   return `export async function getMany({
@@ -281,14 +314,12 @@ export async function find({ connection, id }: FindArgs): Promise<Row | null> {
 
 /** Builds the `Update` type. */
 function buildUpdateType({
-  table,
+  primaryKey,
   updatableColumns,
 }: {
-  table: TableDetails;
+  primaryKey: TableColumn;
   updatableColumns: TableColumn[];
 }): string {
-  const primaryKey = getPrimaryKey(table);
-
   const updateFields = updatableColumns.map(
     (col) => `${col.name}: ${columnToTypescriptType(col)}`,
   );
@@ -303,13 +334,12 @@ function buildUpdateManyArgsType(): string {
 
 /** Builds the `updateMany` function. */
 function buildUpdateManyFunction({
-  table,
+  primaryKey,
   updatableColumns,
 }: {
-  table: TableDetails;
+  primaryKey: TableColumn;
   updatableColumns: TableColumn[];
 }): string {
-  const primaryKey = getPrimaryKey(table);
   const primaryKeyAndUpdatableColumns = [primaryKey, ...updatableColumns];
 
   const tuples = primaryKeyAndUpdatableColumns
@@ -369,8 +399,11 @@ function buildDeleteManyArgsType(): string {
 }
 
 /** Builds the `deleteMany` function. */
-function buildDeleteManyFunction({ table }: { table: TableDetails }): string {
-  const primaryKey = getPrimaryKey(table);
+function buildDeleteManyFunction({
+  primaryKey,
+}: {
+  primaryKey: TableColumn;
+}): string {
   const primaryKeySqlType = pgTypeToUnnestType(primaryKey);
 
   return `export async function deleteMany({
@@ -400,9 +433,19 @@ export { _delete as delete };`;
 }
 
 /** Builds functions generated from indexes on the table. */
-function buildIndexFunctions({ table }: { table: TableDetails }): string {
+function buildIndexFunctions({
+  indices,
+  columns,
+}: {
+  indices: TableIndex[];
+  columns: TableColumn[];
+}): string {
+  const columnsMap: Map<string, TableColumn> = new Map(
+    columns.map((col) => [col.name, col]),
+  );
+
   return (
-    table.indices
+    indices
       // Ignore primary key indexes since we generate this earlier as the standard CRUD.
       .filter((index) => !index.isPrimary)
       // For now, let's ignore any indexes with a functional column component (e.g LOWER(col)).
@@ -410,51 +453,37 @@ function buildIndexFunctions({ table }: { table: TableDetails }): string {
       // For now, let's ignore any indexes with a predicate (e.g WHERE col IS NOT NULL).
       // TODO: `enums` and `domains` are probably ok... But what about `range` and `composite`?
       .filter((index) => index.columns.every((col) => !col.predicate))
-      .map((index) => buildIndexFunction({ index, table }))
+      .map((index) => {
+        const indexWithColumns: IndexWithColumns = {
+          index: index,
+          columns: (
+            index.columns as TableIndexColumnNonFunctionalNoPredicate[]
+          ).map((col) => columnsMap.get(col.name)!),
+        };
+        return buildIndexFunction({ index: indexWithColumns });
+      })
       .join("\n\n")
   );
 }
 
-function buildIndexFunction({
-  index,
-  table,
-}: {
+/** A `TableIndex` with its corresponding `TableColumn`s. */
+type IndexWithColumns = {
   index: TableIndex;
-  table: TableDetails;
-}): string {
+  columns: TableColumn[];
+};
+
+function buildIndexFunction({ index }: { index: IndexWithColumns }): string {
   const isSingleColumnIndex = index.columns.length === 1;
 
   if (isSingleColumnIndex) {
-    const indexColumn: TableIndexColumnNonFunctionalNoPredicate = index
-      .columns[0] as TableIndexColumnNonFunctionalNoPredicate;
-
-    const tableColumn: TableColumn | undefined = table.columns.find(
-      (c) => c.name === indexColumn.name,
-    );
-
-    if (!tableColumn) {
-      throw new NoTableColumnForIndex(table, index);
-    }
-
+    const column = index.columns[0];
     return buildSingleColumnIndexFunction({
-      index,
-      tableColumn,
+      index: index.index,
+      column: column,
     });
   } else {
-    const tableColumns = index.columns.map((indexColumn) => {
-      const tableColumn: TableColumn | undefined = table.columns.find(
-        (c) => c.name === indexColumn.name,
-      );
-
-      if (!tableColumn) {
-        throw new NoTableColumnForIndex(table, index);
-      }
-
-      return tableColumn;
-    });
-
     return buildMultiColumnIndexFunction({
-      columns: tableColumns,
+      columns: index.columns,
     });
   }
 }
@@ -467,14 +496,14 @@ type TableIndexColumnNonFunctionalNoPredicate = TableIndexColumnNonFunctional &
 
 function buildSingleColumnIndexFunction({
   index,
-  tableColumn,
+  column,
 }: {
   index: TableIndex;
-  tableColumn: TableColumn;
+  column: TableColumn;
 }): string {
-  const columnName = tableColumn.name;
+  const columnName = column.name;
   const columnNamePascalCase = snakeToPascalCase(columnName);
-  const columnTypescriptType = columnToTypescriptType(tableColumn);
+  const columnTypescriptType = columnToTypescriptType(column);
 
   const getManyArgsName = `GetManyBy${columnNamePascalCase}Args`;
   const getManyArgumentName = "columns";
@@ -482,7 +511,7 @@ function buildSingleColumnIndexFunction({
     ${getManyArgumentName}: ${columnTypescriptType}[];
   }`;
   const slonikPrimitiveMapping = columnToSlonikPrimitiveValue({
-    column: tableColumn,
+    column: column,
     variableName: "col",
   });
 
@@ -495,7 +524,7 @@ function buildSingleColumnIndexFunction({
   return connection.any(sql.type(row)\`
     SELECT \${columnsFragment}
     FROM \${tableFragment}
-    WHERE ${columnName} = ANY(\${sql.array(list, "${pgTypeToUnnestType(tableColumn)}")})\`);
+    WHERE ${columnName} = ANY(\${sql.array(list, "${pgTypeToUnnestType(column)}")})\`);
   }`;
 
   const getArgsName = `GetBy${columnNamePascalCase}Args`;
@@ -519,7 +548,7 @@ function buildSingleColumnIndexFunction({
     return ${getFunctionReturnStatement};
   }`;
 
-  const reference = getColumnReference(tableColumn);
+  const reference = getColumnReference(column);
   const getManyMapFunction = reference
     ? `export async function getManyByPenguinMap({
   connection,

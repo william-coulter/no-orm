@@ -19,6 +19,7 @@ export async function parse({
 
   const tableFileContent = await TableBuilder.build({
     table,
+    config,
   });
 
   const formattedTableFileContent = await prettierFormat(
@@ -34,6 +35,7 @@ export async function parse({
 
   const modelFileContent = await ModelBuilder.build({
     table,
+    config,
   });
 
   const formattedModelFileContent = await prettierFormat(
@@ -55,4 +57,4 @@ type ParseArgs = {
   prettier_config: Options | null;
 };
 
-type NonIgnoredConfig = Extract<ParsedTableConfig, { ignore: false }>;
+export type NonIgnoredConfig = Extract<ParsedTableConfig, { ignore: false }>;

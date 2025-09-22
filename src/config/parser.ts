@@ -17,7 +17,8 @@ export const emptyParsedSchemaConfig: ParsedSchemaConfig = {
 };
 
 export type ParsedTableConfig = Ignorable<{
-  column_configs: Map<string, ParsedColumnConfig>;
+  ignored_columns: Set<string>;
+  readonly_columns: Set<string>;
 }>;
 
 export type ParsedColumnConfig = Ignorable<{
@@ -144,25 +145,22 @@ export function parseForTable(
     },
   );
 
-  const configMap = new Map<string, ParsedColumnConfig>(
-    filteredConfig.map(([key, columnConfig]) => {
-      if (columnConfig.ignore === true) {
-        return [key, { ignore: true }];
-      } else {
-        const parsedColumnConfig: ParsedColumnConfig = {
-          ignore: false,
-          readonly:
-            columnConfig.readonly === undefined ? false : columnConfig.readonly,
-        };
+  const ignoredColumns = new Set(
+    filteredConfig
+      .filter(([_columnName, config]) => !!config.ignore)
+      .map(([columnName, _config]) => columnName),
+  );
 
-        return [key, parsedColumnConfig];
-      }
-    }),
+  const readOnlyColumns = new Set(
+    filteredConfig
+      .filter(([_columnName, config]) => !!config.readonly)
+      .map(([columnName, _config]) => columnName),
   );
 
   return {
     ignore: false,
-    column_configs: configMap,
+    ignored_columns: ignoredColumns,
+    readonly_columns: readOnlyColumns,
   };
 }
 

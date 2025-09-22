@@ -1,4 +1,4 @@
-import { TableDetails } from "extract-pg-schema";
+import { TableColumn, TableDetails } from "extract-pg-schema";
 import {
   columnToZodType,
   isBuiltInRange,
@@ -6,21 +6,27 @@ import {
   isJsonLike,
 } from "./mappers";
 import { isDomainColumn, isEnumColumn } from "./column-types";
+import { NonIgnoredConfig } from "../parsers/table.parser";
 
 type BuildArgs = {
   table: TableDetails;
+  config: NonIgnoredConfig;
 };
 
-export async function build({ table }: BuildArgs): Promise<string> {
-  return `${buildImports({ table })}
+export async function build({ table, config }: BuildArgs): Promise<string> {
+  const nonIgnoredColumns = table.columns.filter(
+    (col) => !config.ignored_columns.has(col.name),
+  );
 
-${buildRow({ table })}
+  return `${buildImports({ columns: nonIgnoredColumns })}
+
+${buildRow({ columns: nonIgnoredColumns })}
 
 ${buildRowType()}
 
 ${buildIdType()}
 
-${buildTableFragment({ table })}
+${buildTableFragment({ schemaName: table.schemaName, tableName: table.name })}
 
 ${buildColumnsIdentifier()}
 
@@ -31,31 +37,31 @@ ${buildAliasColumns()}
 }
 
 /** Builds the Typescript imports required for the file. */
-function buildImports({ table }: { table: TableDetails }): string {
+function buildImports({ columns }: { columns: TableColumn[] }): string {
   const DEFAULT_IMPORTS: string[] = [
     `import { z } from "zod"`,
     `import { type ListSqlToken, sql } from "slonik"`,
   ];
   const imports = DEFAULT_IMPORTS;
 
-  const containsJsonColumn = table.columns.some(isJsonLike);
-  const containsIntervalColumn = table.columns.some(isIntervalColumn);
-  const containsBuiltInRange = table.columns.some(isBuiltInRange);
+  const containsJsonColumn = columns.some(isJsonLike);
+  const containsIntervalColumn = columns.some(isIntervalColumn);
+  const containsBuiltInRange = columns.some(isBuiltInRange);
   if (containsJsonColumn || containsIntervalColumn || containsBuiltInRange) {
     imports.push(`import * as Postgres from "../../postgres"`);
   }
 
-  const enums = table.columns.filter(isEnumColumn);
+  const enums = columns.filter(isEnumColumn);
   if (enums.length > 0) {
     imports.push(`import * as Enums from "../enums"`);
   }
 
-  const domains = table.columns.filter(isDomainColumn);
+  const domains = columns.filter(isDomainColumn);
   if (domains.length > 0) {
     imports.push(`import * as Domains from "../domains"`);
   }
 
-  const ranges = table.columns.filter((col) => isBuiltInRange(col));
+  const ranges = columns.filter((col) => isBuiltInRange(col));
   if (ranges.length > 0) {
     imports.push(`import * as Ranges from "../ranges"`);
   }
@@ -64,12 +70,12 @@ function buildImports({ table }: { table: TableDetails }): string {
 }
 
 type BuildRowArgs = {
-  table: TableDetails;
+  columns: TableColumn[];
 };
 
 /** Builds the `row` variable. */
-function buildRow({ table }: BuildRowArgs): string {
-  const zodFields = table.columns
+function buildRow({ columns }: BuildRowArgs): string {
+  const zodFields = columns
     .map((column) => {
       const zodType = columnToZodType(column);
       return `${column.name}: ${zodType},`;
@@ -92,11 +98,14 @@ function buildIdType(): string {
   return `export type Id = Row["id"];`;
 }
 
-type BuildTableFragmentArgs = { table: TableDetails };
+type BuildTableFragmentArgs = { schemaName: string; tableName: string };
 
 /** Builds the `table` slonik SQL fragment. */
-function buildTableFragment({ table }: BuildTableFragmentArgs): string {
-  return `export const tableFragment = sql.identifier(["${table.schemaName}", "${table.name}"]);`;
+function buildTableFragment({
+  schemaName,
+  tableName,
+}: BuildTableFragmentArgs): string {
+  return `export const tableFragment = sql.identifier(["${schemaName}", "${tableName}"]);`;
 }
 
 /** Builds the `columns` slonik SqlIdentifiers. */
