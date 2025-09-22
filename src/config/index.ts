@@ -29,5 +29,5 @@ export type NoOrmConfig = {
 export const noOrmConfigSchema = z.object({
   postgres_connection_string: z.string(),
   output_directory: z.string(),
-  schema_configs: databaseSchemaConfigSchema,
+  database_schema_config: databaseSchemaConfigSchema,
 });

@@ -1,26 +1,41 @@
 import { z } from "zod";
 
-export type DatabaseSchemaConfig = {
-  schema_configs: Record<string, SchemaConfig>;
-};
-export type SchemaConfig = {
-  table_configs: Record<string, TableConfig>;
-  ignore?: boolean;
-};
-export type TableConfig = {
-  column_configs: Record<string, ColumnConfig>;
-  ignore?: boolean;
-};
 export type ColumnConfig = {
   readonly?: boolean;
   ignore?: boolean;
 };
 
-export const tableConfigSchema = z.object({
-  readonly_columns: z.array(z.string()),
-  ignored_columns: z.array(z.string()),
+export const columnConfigSchema = z.object({
+  readonly: z.boolean().optional(),
+  ignore: z.boolean().optional(),
 });
-export const schemaConfigSchema = z.record(z.string(), tableConfigSchema);
+
+export type TableConfig = {
+  column_configs: Record<string, ColumnConfig>;
+  ignore?: boolean;
+};
+
+export const tableConfigSchema = z.object({
+  column_configs: z.record(z.string(), columnConfigSchema),
+  ignore: z.boolean().optional(),
+});
+
+export type SchemaConfig = {
+  table_configs: Record<string, TableConfig>;
+  ignore?: boolean;
+};
+
+export const schemaConfigSchema = z.object({
+  table_configs: z.record(z.string(), tableConfigSchema),
+  ignore: z.boolean().optional(),
+});
+
+// type Temp = z.infer<typeof schemaConfigSchema>;
+
+export type DatabaseSchemaConfig = {
+  schema_configs: Record<string, SchemaConfig>;
+};
+
 export const databaseSchemaConfigSchema = z.object({
   schema_configs: z.record(z.string(), schemaConfigSchema),
 });

@@ -51,7 +51,7 @@ async function run({ configPath }: RunArgs) {
     });
 
     const parsedDatabaseConfig = parseForDatabase(
-      config.schema_configs,
+      config.database_schema_config,
       result,
     );
 

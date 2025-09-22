@@ -31,12 +31,10 @@ type Ignorable<T> = { ignore: true } | ({ ignore: false } & T);
  */
 export function parseForDatabase(
   config: DatabaseSchemaConfig,
-  schemas: Schema[],
+  schemas: Record<string, Schema>,
 ): ParsedDatabaseSchemaConfig {
   const userProvidedSchemas = Object.keys(config.schema_configs);
-  const databaseSchemasMap = new Map<string, Schema>(
-    schemas.map((schema) => [schema.name, schema]),
-  );
+  const databaseSchemasMap = new Map<string, Schema>(Object.entries(schemas));
 
   if (userProvidedSchemas.length === 0) {
     return EmptyConfigs.parsedDatabaseConfig;
