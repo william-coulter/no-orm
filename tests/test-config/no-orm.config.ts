@@ -26,8 +26,7 @@ const config: NoOrmConfig = {
               updated_at: { readonly: true },
             },
           },
-          // FIXME: Make this a union.
-          ignore_table: { ignore: true, column_configs: {} },
+          ignore_table: { ignore: true },
         },
       },
     },

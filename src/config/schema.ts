@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Ignorable, ignorableSchema } from "./ignorable";
 
 export type ColumnConfig = {
   readonly?: boolean;
@@ -10,25 +11,31 @@ export const columnConfigSchema = z.object({
   ignore: z.boolean().optional(),
 });
 
-export type TableConfig = {
+export type TableConfig = Ignorable<{
   column_configs: Record<string, ColumnConfig>;
-  ignore?: boolean;
-};
+  /**
+   * If `true`, the table will treat `created_at` and `updated_at` as readonly.
+   *
+   * Default: `true`.
+   */
+  readonly_time_columns?: boolean;
+}>;
 
-export const tableConfigSchema = z.object({
-  column_configs: z.record(z.string(), columnConfigSchema),
-  ignore: z.boolean().optional(),
-});
+export const tableConfigSchema = ignorableSchema(
+  z.object({
+    column_configs: z.record(z.string(), columnConfigSchema),
+  }),
+);
 
-export type SchemaConfig = {
+export type SchemaConfig = Ignorable<{
   table_configs: Record<string, TableConfig>;
-  ignore?: boolean;
-};
+}>;
 
-export const schemaConfigSchema = z.object({
-  table_configs: z.record(z.string(), tableConfigSchema),
-  ignore: z.boolean().optional(),
-});
+export const schemaConfigSchema = ignorableSchema(
+  z.object({
+    table_configs: z.record(z.string(), tableConfigSchema),
+  }),
+);
 
 export type DatabaseSchemaConfig = {
   schema_configs: Record<string, SchemaConfig>;

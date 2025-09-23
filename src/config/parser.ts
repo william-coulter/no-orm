@@ -2,8 +2,7 @@ import { Schema, TableColumn, TableDetails } from "extract-pg-schema";
 import { DatabaseSchemaConfig, SchemaConfig, TableConfig } from "./schema";
 import * as EmptyConfigs from "./empty";
 import * as logger from "../logger";
-
-type Ignorable<T> = { ignore: true } | ({ ignore: false } & T);
+import { Ignorable } from "./ignorable";
 
 /** An internal representation of the user-supplied config that is useful for `no-orm` to consume. */
 export type ParsedDatabaseConfig = {
