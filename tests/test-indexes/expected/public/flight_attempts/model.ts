@@ -214,3 +214,49 @@ export async function getManyByPenguinMap({
   const rows = await getManyByPenguin({ connection, columns });
   return new Map<PenguinsRow["id"], Row>(rows.map((row) => [row.penguin, row]));
 }
+
+export type GetManyByPenguinAndMethod = BaseArgs & {
+  columns: {
+    penguin: PenguinsRow["id"];
+    method: string;
+  }[];
+};
+
+export async function getManyByPenguinAndMethod({
+  connection,
+  columns,
+}: GetManyByPenguinAndMethod): Promise<readonly Row[]> {
+  const tuples = columns.map((col) => [col.penguin, col.method]);
+
+  const query = sql.type(row)`
+    SELECT ${aliasColumns("t")}
+    FROM ${tableFragment} AS t
+    JOIN ${sql.unnest(tuples, ["int4", "text"])} AS input(penguin, method)
+      ON  input.penguin = t.penguin
+      AND input.method = t.method`;
+
+  return connection.any(query);
+}
+
+export type GetByPenguinAndMethod = BaseArgs & {
+  penguin: PenguinsRow["id"];
+  method: string;
+};
+
+export async function getByPenguinAndMethod({
+  connection,
+  penguin,
+  method,
+}: GetByPenguinAndMethod): Promise<Row | null> {
+  const result = await getManyByPenguinAndMethod({
+    connection,
+    columns: [
+      {
+        penguin,
+        method,
+      },
+    ],
+  });
+
+  return result[0] ?? null;
+}

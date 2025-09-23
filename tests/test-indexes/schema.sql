@@ -28,3 +28,5 @@ CREATE TABLE flight_attempts (
 );
 
 CREATE INDEX ON flight_attempts (penguin);
+
+CREATE UNIQUE INDEX ON flight_attempts (penguin, method);

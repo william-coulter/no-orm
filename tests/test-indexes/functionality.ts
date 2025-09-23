@@ -126,6 +126,11 @@ await pool.connect(async (connection) => {
     connection,
     columns: [penguinCreate1.id, penguinCreate4.id],
   });
+
+  await FlightAttemptsModel.getManyByPenguinAndMethod({
+    connection,
+    columns: [{ method: "ski_jump", penguin: penguinCreate1.id }],
+  });
 });
 
 process.exit(0);

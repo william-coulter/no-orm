@@ -483,6 +483,7 @@ function buildIndexFunction({ index }: { index: IndexWithColumns }): string {
     });
   } else {
     return buildMultiColumnIndexFunction({
+      index: index.index,
       columns: index.columns,
     });
   }
@@ -572,17 +573,17 @@ function buildSingleColumnIndexFunction({
 }
 
 function buildMultiColumnIndexFunction({
+  index,
   columns,
 }: {
+  index: TableIndex;
   columns: TableColumn[];
 }): string {
   const pascalCaseParts = columns.map((col) => snakeToPascalCase(col.name));
   const pascalCaseName = pascalCaseParts.join("And");
 
   const getManyArgsName = `GetManyBy${pascalCaseName}`;
-  const getArgsName = `GetBy${pascalCaseName}`;
   const getManyFunctionName = `getManyBy${pascalCaseName}`;
-  const getFunctionName = `getBy${pascalCaseName}`;
 
   const getManyArgsFields = columns.map(
     (col) => `${col.name}: ${columnToTypescriptType(col)};`,
@@ -626,9 +627,19 @@ function buildMultiColumnIndexFunction({
   return connection.any(query);
 };`;
 
+  const getArgsName = `GetBy${pascalCaseName}`;
+  const getFunctionName = `getBy${pascalCaseName}`;
+
   const singleArgsFields = columns
     .map((col) => `${col.name}: ${columnToTypescriptType(col)};`)
     .join("\n");
+
+  const getFunctionReturnType = index.isUnique
+    ? `Row | null`
+    : `readonly Row[]`;
+  const getFunctionReturnStatement = index.isUnique
+    ? `result[0] ?? null`
+    : `result`;
 
   const getArgs = `export type ${getArgsName} = BaseArgs & {
     ${singleArgsFields}
@@ -639,13 +650,15 @@ function buildMultiColumnIndexFunction({
   const getFunction = `export async function ${getFunctionName}({
     connection,
     ${passArgsObject}
-  }: ${getArgsName}): Promise<readonly Row[]> {
-    return ${getManyFunctionName}({
+  }: ${getArgsName}): Promise<${getFunctionReturnType}> {
+    const result = await ${getManyFunctionName}({
       connection,
       columns: [{
         ${passArgsObject}
       }],
     });
+
+    return ${getFunctionReturnStatement};
   };`;
 
   return `

@@ -211,7 +211,7 @@ export async function getBySpeciesAndDateOfBirth({
   species,
   date_of_birth,
 }: GetBySpeciesAndDateOfBirth): Promise<readonly Row[]> {
-  return getManyBySpeciesAndDateOfBirth({
+  const result = await getManyBySpeciesAndDateOfBirth({
     connection,
     columns: [
       {
@@ -220,6 +220,8 @@ export async function getBySpeciesAndDateOfBirth({
       },
     ],
   });
+
+  return result;
 }
 
 export type GetManyByNameArgs = BaseArgs & {
