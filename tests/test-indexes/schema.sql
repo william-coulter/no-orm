@@ -28,7 +28,3 @@ CREATE TABLE flight_attempts (
 );
 
 CREATE INDEX ON flight_attempts (penguin);
-
--- No support (yet).
--- CREATE INDEX ON flight_attempts (failure_reason)
---   WHERE failure_reason IS NOT NULL;
