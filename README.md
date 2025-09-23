@@ -2,10 +2,12 @@
 
 - Test readonly and omitted columns.
 - Add logger (warn on unknown types, add loading spinner).
+- Think about first usage in a project / initialising / onboarding flow.
 - Address all `TODO`s / `FIXME`s in the code.
 - Test Primary Key not called "id".
 - Ensure all types from gen functions are exported.
 - Handle UNIQUE multi-column index.
+- Update README and point to docs.
 
 # No ORM!
 
