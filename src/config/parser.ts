@@ -3,7 +3,10 @@ import { DatabaseSchemaConfig, SchemaConfig, TableConfig } from "./schema";
 import * as EmptyConfigs from "./empty";
 import * as logger from "../logger";
 
-export type ParsedDatabaseSchemaConfig = {
+type Ignorable<T> = { ignore: true } | ({ ignore: false } & T);
+
+/** An internal representation of the user-supplied config that is useful for `no-orm` to consume. */
+export type ParsedDatabaseConfig = {
   schema_configs: Map<string, ParsedSchemaConfig>;
 };
 
@@ -11,21 +14,10 @@ export type ParsedSchemaConfig = Ignorable<{
   table_configs: Map<string, ParsedTableConfig>;
 }>;
 
-export const emptyParsedSchemaConfig: ParsedSchemaConfig = {
-  ignore: false,
-  table_configs: new Map(),
-};
-
 export type ParsedTableConfig = Ignorable<{
   ignored_columns: Set<string>;
   readonly_columns: Set<string>;
 }>;
-
-export type ParsedColumnConfig = Ignorable<{
-  readonly: boolean;
-}>;
-
-type Ignorable<T> = { ignore: true } | ({ ignore: false } & T);
 
 /**
  * Parses the user-supplied config and filters out any schemas that do not exist in the database.
@@ -33,7 +25,7 @@ type Ignorable<T> = { ignore: true } | ({ ignore: false } & T);
 export function parseForDatabase(
   config: DatabaseSchemaConfig,
   schemas: Record<string, Schema>,
-): ParsedDatabaseSchemaConfig {
+): ParsedDatabaseConfig {
   const userProvidedSchemas = Object.keys(config.schema_configs);
   const databaseSchemasMap = new Map<string, Schema>(Object.entries(schemas));
 
