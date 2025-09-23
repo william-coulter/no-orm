@@ -55,9 +55,7 @@ async function run({ configPath }: RunArgs) {
       result,
     );
 
-    const schemaNames = Object.keys(result);
-    for (const schemaName of schemaNames) {
-      const schema = result[schemaName];
+    for (const schema of Object.values(result)) {
       const schemaConfig =
         parsedDatabaseConfig.schema_configs.get(schema.name) ??
         EmptyConfigs.parsedSchemaConfig;

@@ -61,8 +61,7 @@ export async function parse({
     "utf-8",
   );
 
-  const tables = schema.tables;
-  for (const table of tables) {
+  for (const table of Object.values(schema.tables)) {
     const tableConfig =
       config.table_configs.get(table.name) ?? EmptyConfigs.parsedTableConfig;
 
