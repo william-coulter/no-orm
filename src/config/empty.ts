@@ -1,10 +1,10 @@
 import {
-  ParsedDatabaseSchemaConfig,
+  ParsedDatabaseConfig,
   ParsedSchemaConfig,
   ParsedTableConfig,
 } from "./parser";
 
-export const parsedDatabaseConfig: ParsedDatabaseSchemaConfig = {
+export const parsedDatabaseConfig: ParsedDatabaseConfig = {
   schema_configs: new Map(),
 };
 
@@ -15,5 +15,6 @@ export const parsedSchemaConfig: ParsedSchemaConfig = {
 
 export const parsedTableConfig: ParsedTableConfig = {
   ignore: false,
-  column_configs: new Map(),
+  ignored_columns: new Set(),
+  readonly_columns: new Set(),
 };
