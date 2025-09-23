@@ -74,7 +74,7 @@ export async function parse({
     await TableParser.parse({
       table: table,
       config: tableConfig,
-      output_path: path.join(output_path, table.name),
+      output_path: path.join(schemaOutputPath, table.name),
       prettier_config: prettier_config,
     });
   }
