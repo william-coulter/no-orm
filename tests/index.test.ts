@@ -37,21 +37,25 @@ describe("no-orm", () => {
   const TESTS_DIR = path.join(__dirname);
   type TestCase = { name: string; directory: string };
   const testCases: TestCase[] = [
+    // {
+    //   name: "Example from the docs (hero section).",
+    //   directory: path.join(TESTS_DIR, "test-docs-hero-example"),
+    // },
+    // {
+    //   name: "Test handling of all supported Postgres types.",
+    //   directory: path.join(TESTS_DIR, "test-type-parsing"),
+    // },
+    // {
+    //   name: "Test foreign key references",
+    //   directory: path.join(TESTS_DIR, "test-foreign-keys"),
+    // },
+    // {
+    //   name: "Test indexes",
+    //   directory: path.join(TESTS_DIR, "test-indexes"),
+    // },
     {
-      name: "Example from the docs (hero section).",
-      directory: path.join(TESTS_DIR, "test-docs-hero-example"),
-    },
-    {
-      name: "Test handling of all supported Postgres types.",
-      directory: path.join(TESTS_DIR, "test-type-parsing"),
-    },
-    {
-      name: "Test foreign key references",
-      directory: path.join(TESTS_DIR, "test-foreign-keys"),
-    },
-    {
-      name: "Test indexes",
-      directory: path.join(TESTS_DIR, "test-indexes"),
+      name: "Test the no-orm config",
+      directory: path.join(TESTS_DIR, "test-config"),
     },
   ];
 

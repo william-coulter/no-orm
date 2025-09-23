@@ -30,8 +30,6 @@ export const schemaConfigSchema = z.object({
   ignore: z.boolean().optional(),
 });
 
-// type Temp = z.infer<typeof schemaConfigSchema>;
-
 export type DatabaseSchemaConfig = {
   schema_configs: Record<string, SchemaConfig>;
 };
