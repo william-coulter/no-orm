@@ -6,11 +6,11 @@ import {
   isJsonLike,
 } from "./mappers";
 import { isDomainColumn, isEnumColumn } from "./column-types";
-import { NonIgnoredConfig } from "../parsers/table.parser";
+import { NonIgnoredConfig as NonIgnoredTableConfig } from "../parsers/table.parser";
 
 type BuildArgs = {
   table: TableDetails;
-  config: NonIgnoredConfig;
+  config: NonIgnoredTableConfig;
 };
 
 export async function build({ table, config }: BuildArgs): Promise<string> {

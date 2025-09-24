@@ -1,6 +1,6 @@
 import { Schema, TableColumn, TableDetails } from "extract-pg-schema";
 import { DatabaseSchemaConfig, SchemaConfig, TableConfig } from "./schema";
-import * as EmptyConfigs from "./empty";
+import * as DefaultConfigs from "./default";
 import * as logger from "../logger";
 import { Ignorable } from "./ignorable";
 
@@ -29,7 +29,7 @@ export function parseForDatabase(
   const databaseSchemasMap = new Map<string, Schema>(Object.entries(schemas));
 
   if (userProvidedSchemas.length === 0) {
-    return EmptyConfigs.parsedDatabaseConfig;
+    return DefaultConfigs.parsedDatabaseConfig;
   }
 
   const matchingSchemas = new Set(
@@ -138,14 +138,17 @@ export function parseForTable(
 
   const ignoredColumns = new Set(
     filteredConfig
-      .filter(([_columnName, config]) => !!config.ignore)
+      .filter(([_columnName, config]) => config.ignore)
       .map(([columnName, _config]) => columnName),
   );
 
+  const readOnlyTimeColumns = config.readonly_time_columns ?? true;
+
   const readOnlyColumns = new Set(
     filteredConfig
-      .filter(([_columnName, config]) => !!config.readonly)
-      .map(([columnName, _config]) => columnName),
+      .filter(([_columnName, config]) => config.readonly)
+      .map(([columnName, _config]) => columnName)
+      .concat(readOnlyTimeColumns ? TIME_COLUMNS : []),
   );
 
   return {
@@ -165,3 +168,6 @@ class InvalidIgnoredColumn extends Error {
     );
   }
 }
+
+// This could also be a config option one day.
+export const TIME_COLUMNS = ["created_at", "updated_at"];

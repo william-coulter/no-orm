@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Ignorable, ignorableSchema } from "./ignorable";
 
 export type ColumnConfig = {
+  // TODO: Add more comments.
   readonly?: boolean;
   ignore?: boolean;
 };

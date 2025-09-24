@@ -6,7 +6,7 @@ import * as logger from "../logger";
 import * as TableParser from "./table.parser";
 import { ParsedSchemaConfig } from "../config/parser";
 import { prettierFormat } from "..";
-import * as EmptyConfigs from "../config/empty";
+import * as DefaultConfigs from "../config/default";
 import * as EnumsBuilder from "../builders/enums.builder";
 import * as DomainsBuilder from "../builders/domains.builder";
 import * as RangesBuilder from "../builders/ranges.builder";
@@ -63,7 +63,8 @@ export async function parse({
 
   for (const table of Object.values(schema.tables)) {
     const tableConfig =
-      config.table_configs.get(table.name) ?? EmptyConfigs.parsedTableConfig;
+      config.table_configs.get(table.name) ??
+      DefaultConfigs.buildParsedTableConfig(true);
 
     if (tableConfig.ignore === true) {
       logger.debug(`Table '${table.name}' is ignored, skipping...`);
@@ -86,4 +87,4 @@ type ParseArgs = {
   prettier_config: Options | null;
 };
 
-type NonIgnoredConfig = Extract<ParsedSchemaConfig, { ignore: false }>;
+export type NonIgnoredConfig = Extract<ParsedSchemaConfig, { ignore?: false }>;

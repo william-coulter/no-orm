@@ -10,7 +10,7 @@ import * as logger from "./logger";
 import { noOrmConfigSchema } from "./config";
 import * as PostgresBuilder from "./builders/postgres.builder";
 import * as SchemaParser from "./parsers/schema.parser";
-import * as EmptyConfigs from "./config/empty";
+import * as DefaultConfigs from "./config/default";
 import { parseForDatabase } from "./config/parser";
 
 const program = new Command();
@@ -58,7 +58,7 @@ async function run({ configPath }: RunArgs) {
     for (const schema of Object.values(result)) {
       const schemaConfig =
         parsedDatabaseConfig.schema_configs.get(schema.name) ??
-        EmptyConfigs.parsedSchemaConfig;
+        DefaultConfigs.parsedSchemaConfig;
 
       if (schemaConfig.ignore === true) {
         logger.debug(`Schema '${schema.name}' is ignored, skipping...`);

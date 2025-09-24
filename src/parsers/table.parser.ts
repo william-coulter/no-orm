@@ -57,4 +57,4 @@ type ParseArgs = {
   prettier_config: Options | null;
 };
 
-export type NonIgnoredConfig = Extract<ParsedTableConfig, { ignore: false }>;
+export type NonIgnoredConfig = Extract<ParsedTableConfig, { ignore?: false }>;

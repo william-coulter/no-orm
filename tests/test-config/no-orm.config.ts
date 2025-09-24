@@ -14,16 +14,7 @@ const config: NoOrmConfig = {
         table_configs: {
           penguins: {
             column_configs: {
-              // FIXME: Make this automatic unless specified otherwise.
-              created_at: { readonly: true },
-              updated_at: { readonly: true },
               ignore_column: { ignore: true },
-            },
-          },
-          flight_attempts: {
-            column_configs: {
-              created_at: { readonly: true },
-              updated_at: { readonly: true },
             },
           },
           ignore_table: { ignore: true },

@@ -1,6 +1,6 @@
 # TODO List:
 
-- Test readonly and omitted columns.
+- Address `TODO`s relating to the config.
 - Add logger (warn on unknown types, add loading spinner).
 - Think about first usage in a project / initialising / onboarding flow.
 - Address all `TODO`s / `FIXME`s in the code.
