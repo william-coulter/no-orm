@@ -40,12 +40,12 @@ program
 program.arguments("<command>").action((cmd) => {
   logger.error(`Unknown command: '${cmd}'`);
   program.outputHelp();
-  process.exitCode = 1;
+  process.exit(1);
 });
 
 if (process.argv.length <= 2) {
   program.outputHelp();
-  process.exitCode = 1;
+  process.exit(1);
 } else {
   program.parse(process.argv);
 }
