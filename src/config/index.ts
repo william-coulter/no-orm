@@ -18,8 +18,7 @@ export type NoOrmConfig = {
   readonly output_directory: string;
 
   /**
-   * Define custom behaviour for how `no-orm` reads your database.
-   * E.g ignore tables, mark columns as read-only, etc.
+   * Define custom behaviour for how `no-orm` reads your database schema.
    * TODO: Make me optional.
    */
   readonly database_schema_config: DatabaseSchemaConfig;
