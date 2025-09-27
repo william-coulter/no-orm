@@ -1,11 +1,16 @@
 import {
-  ParsedDatabaseConfig,
+  ParsedDatabaseSchemaConfig,
   ParsedSchemaConfig,
   ParsedTableConfig,
   TIME_COLUMNS,
 } from "./parser";
 
-export const parsedDatabaseConfig: ParsedDatabaseConfig = {
+export const postgresConnectionString =
+  "postgres://postgres:postgres@localhost:5432/postgres";
+
+export const outputDirectory = "no-orm";
+
+export const parsedDatabaseConfig: ParsedDatabaseSchemaConfig = {
   schema_configs: new Map(),
 };
 

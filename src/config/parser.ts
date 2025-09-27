@@ -3,9 +3,15 @@ import { DatabaseSchemaConfig, SchemaConfig, TableConfig } from "./schema";
 import * as DefaultConfigs from "./default";
 import * as logger from "../logger";
 import { Ignorable } from "./ignorable";
+import { NoOrmConfig } from ".";
 
-/** An internal representation of the user-supplied config that is useful for `no-orm` to consume. */
-export type ParsedDatabaseConfig = {
+/** An internal representation of the user-supplied `no-orm config` that is useful for `no-orm` to consume. */
+export type ParsedConfig = {
+  output_directory: string;
+  database_schema_config: ParsedDatabaseSchemaConfig;
+};
+
+export type ParsedDatabaseSchemaConfig = {
   schema_configs: Map<string, ParsedSchemaConfig>;
 };
 
@@ -18,13 +24,37 @@ export type ParsedTableConfig = Ignorable<{
   readonly_columns: Set<string>;
 }>;
 
+export function parse(
+  config: NoOrmConfig,
+  schemas: Record<string, Schema>,
+): ParsedConfig {
+  const outputDirectory: string =
+    config.output_directory ?? DefaultConfigs.outputDirectory;
+
+  const databaseSchemaConfig: ParsedDatabaseSchemaConfig =
+    config.database_schema_config
+      ? parseForDatabase(config.database_schema_config, schemas)
+      : DefaultConfigs.parsedDatabaseConfig;
+
+  return {
+    output_directory: outputDirectory,
+    database_schema_config: databaseSchemaConfig,
+  };
+}
+
+export function parsePostgresConnectionString(config: NoOrmConfig): string {
+  return (
+    config.postgres_connection_string ?? DefaultConfigs.postgresConnectionString
+  );
+}
+
 /**
  * Parses the user-supplied config and filters out any schemas that do not exist in the database.
  */
 export function parseForDatabase(
   config: DatabaseSchemaConfig,
   schemas: Record<string, Schema>,
-): ParsedDatabaseConfig {
+): ParsedDatabaseSchemaConfig {
   const userProvidedSchemas = Object.keys(config.schema_configs);
   const databaseSchemasMap = new Map<string, Schema>(Object.entries(schemas));
 

@@ -11,7 +11,7 @@ import { noOrmConfigSchema } from "./config";
 import * as PostgresBuilder from "./builders/postgres.builder";
 import * as SchemaParser from "./parsers/schema.parser";
 import * as DefaultConfigs from "./config/default";
-import { parseForDatabase } from "./config/parser";
+import * as ConfigParser from "./config/parser";
 
 const program = new Command();
 
@@ -31,14 +31,26 @@ async function run({ configPath }: RunArgs) {
     const config = noOrmConfigSchema.parse(
       configModule.default ?? configModule,
     );
+    const postgresConnectionString =
+      ConfigParser.parsePostgresConnectionString(config);
+
+    const schemas = await extractSchemas({
+      connectionString: postgresConnectionString,
+    });
+
+    const parsedConfig = ConfigParser.parse(config, schemas);
+
     // TODO: Make me a config argument.
     const prettierConfig = await resolveConfig(".prettierrc");
 
-    await mkdir(config.output_directory, {
+    await mkdir(parsedConfig.output_directory, {
       recursive: true,
     });
 
-    const postgresPath = path.join(config.output_directory, "postgres.ts");
+    const postgresPath = path.join(
+      parsedConfig.output_directory,
+      "postgres.ts",
+    );
     const postgresContent = PostgresBuilder.build();
     const formattedPostgresContent = await prettierFormat(
       postgresContent,
@@ -46,18 +58,9 @@ async function run({ configPath }: RunArgs) {
     );
     await writeFile(postgresPath, formattedPostgresContent, "utf-8");
 
-    const result = await extractSchemas({
-      connectionString: config.postgres_connection_string,
-    });
-
-    const parsedDatabaseConfig = parseForDatabase(
-      config.database_schema_config,
-      result,
-    );
-
-    for (const schema of Object.values(result)) {
+    for (const schema of Object.values(schemas)) {
       const schemaConfig =
-        parsedDatabaseConfig.schema_configs.get(schema.name) ??
+        parsedConfig.database_schema_config.schema_configs.get(schema.name) ??
         DefaultConfigs.parsedSchemaConfig;
 
       if (schemaConfig.ignore === true) {
@@ -67,7 +70,7 @@ async function run({ configPath }: RunArgs) {
 
       await SchemaParser.parse({
         schema: schema,
-        output_path: config.output_directory,
+        output_path: parsedConfig.output_directory,
         config: schemaConfig,
         prettier_config: prettierConfig,
       });
