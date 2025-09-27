@@ -5,7 +5,7 @@ import { Options } from "prettier";
 import * as logger from "../logger";
 import * as TableParser from "./table.parser";
 import { ParsedSchemaConfig } from "../config/parser";
-import { prettierFormat } from "..";
+import { prettierFormat } from "../commands/generate";
 import * as DefaultConfigs from "../config/default";
 import * as EnumsBuilder from "../builders/enums.builder";
 import * as DomainsBuilder from "../builders/domains.builder";

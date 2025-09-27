@@ -3,7 +3,7 @@ import path from "path";
 import { mkdir, writeFile } from "fs/promises";
 import { Options } from "prettier";
 import { ParsedTableConfig } from "../config/parser";
-import { prettierFormat } from "..";
+import { prettierFormat } from "../commands/generate";
 import * as TableBuilder from "../builders/table.builder";
 import * as ModelBuilder from "../builders/model.builder";
 
