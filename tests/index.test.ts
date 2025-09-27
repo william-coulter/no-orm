@@ -90,7 +90,7 @@ describe("no-orm", () => {
 
     const noOrmResult = await execa(
       "npx",
-      ["tsx", cliPath, "--config-path", configPath],
+      ["tsx", cliPath, "generate", "--config-path", configPath],
       {
         env: {
           ...process.env,

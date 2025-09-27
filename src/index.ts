@@ -16,12 +16,41 @@ import * as ConfigParser from "./config/parser";
 const program = new Command();
 
 program
+  .name("no-orm")
+  .description(
+    "Generate type-safe Slonik / Zod interfaces and access patterns from your PostgreSQL schema.",
+  )
+  .usage("<command> [options]");
+
+program
+  .command("init")
+  .description("Initialize `no-orm` in your project.")
+  .action(async () => {
+    logger.info("Welcome to `no-orm`!");
+  });
+
+program
+  .command("generate")
+  .description("Generate models based on Postgres schema")
   .option("--config-path <path>", "Path to the config file", "no-orm.config.ts")
-  .parse(process.argv);
+  .action(async (options: { configPath: string }) => {
+    await runGenerate(options);
+  });
 
-const options = program.opts<{ configPath: string }>();
+program.arguments("<command>").action((cmd) => {
+  logger.error(`Unknown command: '${cmd}'`);
+  program.outputHelp();
+  process.exitCode = 1;
+});
 
-async function run({ configPath }: RunArgs) {
+if (process.argv.length <= 2) {
+  program.outputHelp();
+  process.exitCode = 1;
+} else {
+  program.parse(process.argv);
+}
+
+async function runGenerate({ configPath }: RunArgs) {
   try {
     const fullPathToConfig = path.isAbsolute(configPath)
       ? configPath
@@ -86,8 +115,6 @@ async function run({ configPath }: RunArgs) {
 type RunArgs = {
   configPath: string;
 };
-
-run({ configPath: options.configPath });
 
 /** Will format the file according to the prettier config. */
 // FIXME: Format the entire `no-orm` directory once at the end.
