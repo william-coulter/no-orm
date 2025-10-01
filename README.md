@@ -1,12 +1,9 @@
 # TODO List:
 
-- Address `TODO`s relating to the config.
-- Add logger (warn on unknown types, add loading spinner).
-- Think about first usage in a project / initialising / onboarding flow.
 - Address all `TODO`s / `FIXME`s in the code.
 - Test Primary Key not called "id".
 - Ensure all types from gen functions are exported.
-- Handle UNIQUE multi-column index.
+- Use a linter to enforce import order (and other things).
 - Update README and point to docs.
 
 # No ORM!
