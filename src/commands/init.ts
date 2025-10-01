@@ -35,8 +35,10 @@ export async function run({}: RunArgs): Promise<void> {
       chalk.bgBlue.white(`no-orm generate --config-path ${configPath}`),
     );
 
-    const logo = getLogoForWidth(process.stdout.columns);
-    console.log(chalk.blue(logo));
+    const terminalWidth = process.stdout.columns;
+    const logo = getLogoForWidth(terminalWidth);
+    const centredLogo = center(logo, terminalWidth);
+    console.log(chalk.blue(centredLogo));
   } catch (e) {
     logger.error(`Could not init no-orm: ${e}`);
     process.exit(1);
@@ -54,6 +56,16 @@ export default config;
 `;
 
   await writeFile(path, emptyConfig);
+}
+
+function center(text: string, width: number) {
+  return text
+    .split("\n")
+    .map((line) => {
+      const pad = Math.max(0, Math.floor((width - line.length) / 2));
+      return " ".repeat(pad) + line;
+    })
+    .join("\n");
 }
 
 function getLogoForWidth(width: number): string {
