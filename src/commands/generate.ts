@@ -10,6 +10,7 @@ import * as SchemaParser from "../parsers/schema.parser";
 import * as DefaultConfigs from "../config/default";
 import * as ConfigParser from "../config/parser";
 
+// STARTHERE: Get the `generate` function happening in the new CLI tool.
 export async function run({ configPath }: RunArgs): Promise<void> {
   try {
     const fullPathToConfig = path.isAbsolute(configPath)

@@ -47,6 +47,7 @@ export async function run({}: RunArgs): Promise<void> {
 
 type RunArgs = {};
 
+// FIXME: Maybe hard-code the local DB in here.
 async function buildEmptyConfig(path: string): Promise<void> {
   const emptyConfig = `import { NoOrmConfig } from "no-orm";
 
