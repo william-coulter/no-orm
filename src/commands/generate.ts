@@ -1,4 +1,3 @@
-const { extractSchemas } = await import("extract-pg-schema");
 import path from "path";
 import { mkdir, writeFile } from "fs/promises";
 import { format, resolveConfig, type Options } from "prettier";
@@ -10,7 +9,10 @@ import * as SchemaParser from "../parsers/schema.parser";
 import * as DefaultConfigs from "../config/default";
 import * as ConfigParser from "../config/parser";
 
-// STARTHERE: Get the `generate` function happening in the new CLI tool.
+const extractSchemaMod = await import("extract-pg-schema");
+const extractSchemas =
+  extractSchemaMod.extractSchemas ?? extractSchemaMod.default?.extractSchemas;
+
 export async function run({ configPath }: RunArgs): Promise<void> {
   try {
     const fullPathToConfig = path.isAbsolute(configPath)
