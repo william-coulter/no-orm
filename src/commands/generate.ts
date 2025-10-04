@@ -4,7 +4,7 @@ import { format, resolveConfig, type Options } from "prettier";
 
 import * as logger from "../logger";
 import { noOrmConfigSchema } from "../config";
-import * as PostgresBuilder from "../builders/postgres.builder";
+import * as PostgresParser from "../parsers/postgres.parser";
 import * as SchemaParser from "../parsers/schema.parser";
 import * as DefaultConfigs from "../config/default";
 import * as ConfigParser from "../config/parser";
@@ -41,16 +41,10 @@ export async function run({ configPath }: RunArgs): Promise<void> {
       recursive: true,
     });
 
-    const postgresPath = path.join(
-      parsedConfig.output_directory,
-      "postgres.ts",
-    );
-    const postgresContent = PostgresBuilder.build();
-    const formattedPostgresContent = await prettierFormat(
-      postgresContent,
-      prettierConfig,
-    );
-    await writeFile(postgresPath, formattedPostgresContent, "utf-8");
+    await PostgresParser.parse({
+      prettier_config: prettierConfig,
+      output_path: path.join(parsedConfig.output_directory, "postgres"),
+    });
 
     for (const schema of Object.values(schemas)) {
       const schemaConfig =
