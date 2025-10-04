@@ -19,6 +19,7 @@ export async function run({ configPath }: RunArgs): Promise<void> {
       ? configPath
       : path.join(process.cwd(), configPath);
 
+    // FIXME: A better error message when config doesn't exist.
     const configModule = await import(fullPathToConfig);
     const config = noOrmConfigSchema.parse(
       configModule.default ?? configModule,
@@ -26,6 +27,7 @@ export async function run({ configPath }: RunArgs): Promise<void> {
     const postgresConnectionString =
       ConfigParser.parsePostgresConnectionString(config);
 
+    // FIXME: A better error message when DB cannot be connected to.
     const schemas = await extractSchemas({
       connectionString: postgresConnectionString,
     });
