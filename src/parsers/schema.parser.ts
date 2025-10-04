@@ -22,44 +22,23 @@ export async function parse({
     recursive: true,
   });
 
-  const enumsContent = await EnumsBuilder.build({
+  await buildEnums({
     schema,
-  });
-  const formattedEnumsContent = await prettierFormat(
-    enumsContent,
+    output_path: path.join(schemaOutputPath, "enums"),
     prettier_config,
-  );
-  await writeFile(
-    path.join(schemaOutputPath, "enums.ts"),
-    formattedEnumsContent,
-    "utf-8",
-  );
+  });
 
-  const domainsContent = await DomainsBuilder.build({
+  await buildDomains({
     schema,
-  });
-  const formattedDomainsContent = await prettierFormat(
-    domainsContent,
+    output_path: path.join(schemaOutputPath, "domains"),
     prettier_config,
-  );
-  await writeFile(
-    path.join(schemaOutputPath, "domains.ts"),
-    formattedDomainsContent,
-    "utf-8",
-  );
+  });
 
-  const rangesContent = await RangesBuilder.build({
+  await buildRanges({
     schema,
-  });
-  const formattedRangesContent = await prettierFormat(
-    rangesContent,
+    output_path: path.join(schemaOutputPath, "ranges"),
     prettier_config,
-  );
-  await writeFile(
-    path.join(schemaOutputPath, "ranges.ts"),
-    formattedRangesContent,
-    "utf-8",
-  );
+  });
 
   for (const table of Object.values(schema.tables)) {
     const tableConfig =
@@ -88,3 +67,84 @@ type ParseArgs = {
 };
 
 export type NonIgnoredConfig = Extract<ParsedSchemaConfig, { ignore?: false }>;
+
+type BuildEnumsArgs = {
+  schema: Schema;
+  output_path: string;
+  prettier_config: Options | null;
+};
+
+async function buildEnums({
+  schema,
+  output_path,
+  prettier_config,
+}: BuildEnumsArgs): Promise<void> {
+  await mkdir(output_path, { recursive: true });
+
+  const files = await EnumsBuilder.build({
+    schema,
+  });
+
+  for (const [fileName, content] of Object.entries(files)) {
+    const formattedContent = await prettierFormat(content, prettier_config);
+    await writeFile(
+      path.join(output_path, fileName),
+      formattedContent,
+      "utf-8",
+    );
+  }
+}
+
+type BuildDomainsArgs = {
+  schema: Schema;
+  output_path: string;
+  prettier_config: Options | null;
+};
+
+async function buildDomains({
+  schema,
+  output_path,
+  prettier_config,
+}: BuildDomainsArgs): Promise<void> {
+  await mkdir(output_path, { recursive: true });
+
+  const files = await DomainsBuilder.build({
+    schema,
+  });
+
+  for (const [fileName, content] of Object.entries(files)) {
+    const formattedContent = await prettierFormat(content, prettier_config);
+    await writeFile(
+      path.join(output_path, fileName),
+      formattedContent,
+      "utf-8",
+    );
+  }
+}
+
+type BuildRangesArgs = {
+  schema: Schema;
+  output_path: string;
+  prettier_config: Options | null;
+};
+
+async function buildRanges({
+  schema,
+  output_path,
+  prettier_config,
+}: BuildRangesArgs): Promise<void> {
+  await mkdir(output_path, { recursive: true });
+
+  const files = await RangesBuilder.build({
+    schema,
+  });
+
+  for (const [fileName, content] of Object.entries(files)) {
+    const formattedContent = await prettierFormat(content, prettier_config);
+    await writeFile(
+      path.join(output_path, fileName),
+      formattedContent,
+      "utf-8",
+    );
+  }
+}

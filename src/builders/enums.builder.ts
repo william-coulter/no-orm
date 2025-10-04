@@ -1,49 +1,61 @@
 import { EnumDetails, Schema } from "extract-pg-schema";
 import { snakeToCamelCase, snakeToPascalCase } from "./helpers";
 import { EnumColumn } from "./column-types";
+import { Files } from "./types";
 
 type BuildArgs = {
   schema: Schema;
 };
 
-export async function build({ schema }: BuildArgs): Promise<string> {
+export async function build({ schema }: BuildArgs): Promise<Files> {
   const enums = schema.enums;
 
-  return `${buildImports()}
-  
-${buildSchemaNamespace(enums)}
-
-${buildTypesNamespace(enums)}`;
+  return {
+    "index.ts": buildIndex(),
+    "schemas.ts": buildSchemas(enums),
+    "types.ts": buildTypes(enums),
+  };
 }
 
-function buildImports(): string {
-  const DEFAULT_IMPORTS: string[] = [`import { z } from "zod"`];
-
-  return DEFAULT_IMPORTS.map((s) => `${s};`).join("\n");
+function buildIndex(): string {
+  return `export * as Schemas from "./schemas";
+export * as Types from "./types";
+`;
 }
 
-function buildSchemaNamespace(details: EnumDetails[]): string {
+function buildSchemas(details: EnumDetails[]): string {
+  const imports = [`import { z } from "zod"`].map((s) => `${s};`).join("\n");
+
   const schemas = details.map((detail) => {
     const schemaName = enumDetailsToZodSchemaName(detail);
     const literals = detail.values.map((v) => `z.literal("${v}")`);
     return `export const ${schemaName} = z.union([${literals.join(",\n")}])`;
   });
 
-  return `export namespace Schemas {
-  ${schemas.join(";\n\n")}
-}`;
+  return `${imports}
+
+${schemas.join(";\n\n")}
+`;
 }
 
-function buildTypesNamespace(details: EnumDetails[]): string {
+function buildTypes(details: EnumDetails[]): string {
+  const imports = [
+    `import { z } from "zod"`,
+    `import * as Schemas from "./schemas"`,
+  ]
+    .map((s) => `${s};`)
+    .join("\n");
+
   const types = details.map((detail) => {
     const typeName = enumDetailsToTypescriptType(detail);
     const schemaName = enumDetailsToZodSchemaName(detail);
     return `export type ${typeName} = z.infer<typeof Schemas.${schemaName}>`;
   });
 
-  return `export namespace Types {
-  ${types.join(";\n\n")}
-}`;
+  return `${imports}
+
+${types.join(";\n\n")}
+`;
 }
 
 export function enumDetailsToZodSchemaName(details: EnumDetails): string {
