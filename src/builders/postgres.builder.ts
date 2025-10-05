@@ -20,7 +20,7 @@ function buildSchemas(): string {
   const imports = [
     `import { z } from "zod"`,
     `import { Range } from "postgres-range"`,
-    `import { IPostgresInterval } from "postgres-interval"`,
+    `import type { IPostgresInterval } from "postgres-interval"`,
     `import * as Types from "./types"`,
   ]
     .map((s) => `${s};`)
