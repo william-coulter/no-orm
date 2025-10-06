@@ -5,10 +5,10 @@ import { default as parseInterval } from "postgres-interval";
 import { pool } from "../slonik-test-connection";
 import * as Domains from "./expected/public/domains";
 import * as Ranges from "./expected/public/ranges";
-import * as TestModel from "./expected/public/test_type_parsing/model";
+import * as TestTypeParsing from "./expected/public/tables/test_type_parsing";
 
 await pool.connect(async (connection) => {
-  const create = await TestModel.create({
+  const create = await TestTypeParsing.create({
     connection,
     shape: {
       a_bigint: BigInt(1234567890), // Purposely a JS supported value (and therefore Postgres bigint type).
@@ -77,12 +77,12 @@ await pool.connect(async (connection) => {
     },
   });
 
-  const read = await TestModel.get({
+  const read = await TestTypeParsing.get({
     connection,
     id: create.id,
   });
 
-  const update = await TestModel.update({
+  const update = await TestTypeParsing.update({
     connection,
     newRow: {
       id: read.id,
@@ -148,7 +148,7 @@ await pool.connect(async (connection) => {
     },
   });
 
-  const _delete = await TestModel.delete({
+  const _delete = await TestTypeParsing.delete({
     connection,
     id: update.id,
   });

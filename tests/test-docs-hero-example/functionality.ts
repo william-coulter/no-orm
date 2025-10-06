@@ -1,9 +1,9 @@
 /** Tests that the functions from `model` execute without errors against the DB. */
 import { pool } from "../slonik-test-connection";
-import * as PenguinsModel from "./expected/public/penguins/model";
+import * as Penguins from "./expected/public/tables/penguins";
 
 await pool.connect(async (connection) => {
-  const create = await PenguinsModel.create({
+  const create = await Penguins.create({
     connection,
     shape: {
       name: "Willy the penguin",
@@ -14,32 +14,32 @@ await pool.connect(async (connection) => {
     },
   });
 
-  const read = await PenguinsModel.get({
+  const read = await Penguins.get({
     connection,
     id: create.id,
   });
 
-  await PenguinsModel.getManyMap({
+  await Penguins.getManyMap({
     connection,
     ids: [create.id],
   });
 
-  await PenguinsModel.find({
+  await Penguins.find({
     connection,
     id: 0,
   });
 
-  await PenguinsModel.find({
+  await Penguins.find({
     connection,
     id: create.id,
   });
 
-  const update = await PenguinsModel.update({
+  const update = await Penguins.update({
     connection,
     newRow: { ...read, waddle_speed_kph: 0.6, favourite_snack: "Pavlova" },
   });
 
-  const _delete = await PenguinsModel.delete({
+  const _delete = await Penguins.delete({
     connection,
     id: update.id,
   });

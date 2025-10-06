@@ -1,12 +1,36 @@
-import { type CommonQueryMethods, sql } from "slonik";
-import {
-  type Id,
-  type Row,
-  aliasColumns,
-  columnsFragment,
-  row,
-  tableFragment,
-} from "./table";
+import { z } from "zod";
+import { type CommonQueryMethods, type ListSqlToken, sql } from "slonik";
+
+export const row = z.object({
+  id: z.number().brand<"public.penguins.id">(),
+  name: z.string(),
+  species: z.string(),
+  waddle_speed_kph: z.number(),
+  favourite_snack: z.string().nullable(),
+  date_of_birth: z.date(),
+  created_at: z.date(),
+  updated_at: z.date(),
+});
+
+export type Row = z.infer<typeof row>;
+
+export type Id = Row["id"];
+
+export const tableFragment = sql.identifier(["public", "penguins"]);
+
+export const columns = Object.keys(row.shape).map((col) =>
+  sql.identifier([col]),
+);
+
+export const columnsFragment = sql.join(columns, sql.fragment`, `);
+
+export function aliasColumns(alias: string): ListSqlToken {
+  const aliasedColumns = Object.keys(row.shape).map((col) =>
+    sql.identifier([alias, col]),
+  );
+
+  return sql.join(aliasedColumns, sql.fragment`, `);
+}
 
 type BaseArgs = { connection: CommonQueryMethods };
 
@@ -171,3 +195,49 @@ async function _delete({ connection, id }: DeleteArgs): Promise<void> {
 }
 
 export { _delete as delete };
+
+export type GetManyByNameAndSpecies = BaseArgs & {
+  columns: {
+    name: string;
+    species: string;
+  }[];
+};
+
+export async function getManyByNameAndSpecies({
+  connection,
+  columns,
+}: GetManyByNameAndSpecies): Promise<readonly Row[]> {
+  const tuples = columns.map((col) => [col.name, col.species]);
+
+  const query = sql.type(row)`
+    SELECT ${aliasColumns("t")}
+    FROM ${tableFragment} AS t
+    JOIN ${sql.unnest(tuples, ["text", "text"])} AS input(name, species)
+      ON  input.name = t.name
+      AND input.species = t.species`;
+
+  return connection.any(query);
+}
+
+export type GetByNameAndSpecies = BaseArgs & {
+  name: string;
+  species: string;
+};
+
+export async function getByNameAndSpecies({
+  connection,
+  name,
+  species,
+}: GetByNameAndSpecies): Promise<Row | null> {
+  const result = await getManyByNameAndSpecies({
+    connection,
+    columns: [
+      {
+        name,
+        species,
+      },
+    ],
+  });
+
+  return result[0] ?? null;
+}

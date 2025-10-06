@@ -5,7 +5,6 @@ import { Options } from "prettier";
 import { ParsedTableConfig } from "../config/parser";
 import { prettierFormat } from "../commands/generate";
 import * as TableBuilder from "../builders/table.builder";
-import * as ModelBuilder from "../builders/model.builder";
 
 export async function parse({
   table,
@@ -28,24 +27,8 @@ export async function parse({
   );
 
   await writeFile(
-    path.join(output_path, "table.ts"),
+    path.join(output_path, `${table.name}.ts`),
     formattedTableFileContent,
-    "utf-8",
-  );
-
-  const modelFileContent = await ModelBuilder.build({
-    table,
-    config,
-  });
-
-  const formattedModelFileContent = await prettierFormat(
-    modelFileContent,
-    prettier_config,
-  );
-
-  await writeFile(
-    path.join(output_path, "model.ts"),
-    formattedModelFileContent,
     "utf-8",
   );
 }

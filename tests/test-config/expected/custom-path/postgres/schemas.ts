@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Range } from "postgres-range";
-import { IPostgresInterval } from "postgres-interval";
+import type { IPostgresInterval } from "postgres-interval";
 import * as Types from "./types";
 
 export const json: z.ZodType<Types.Json> = z.lazy(() =>

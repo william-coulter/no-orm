@@ -1,12 +1,34 @@
-import { type CommonQueryMethods, sql } from "slonik";
-import {
-  type Id,
-  type Row,
-  aliasColumns,
-  columnsFragment,
-  row,
-  tableFragment,
-} from "./table";
+import { z } from "zod";
+import { type CommonQueryMethods, type ListSqlToken, sql } from "slonik";
+
+export const row = z.object({
+  id: z.number().brand<"public.penguins.id">(),
+  name: z.string(),
+  species: z.string(),
+  waddle_speed_kph: z.number(),
+  favourite_snack: z.string().nullable(),
+  date_of_birth: z.date(),
+});
+
+export type Row = z.infer<typeof row>;
+
+export type Id = Row["id"];
+
+export const tableFragment = sql.identifier(["public", "penguins"]);
+
+export const columns = Object.keys(row.shape).map((col) =>
+  sql.identifier([col]),
+);
+
+export const columnsFragment = sql.join(columns, sql.fragment`, `);
+
+export function aliasColumns(alias: string): ListSqlToken {
+  const aliasedColumns = Object.keys(row.shape).map((col) =>
+    sql.identifier([alias, col]),
+  );
+
+  return sql.join(aliasedColumns, sql.fragment`, `);
+}
 
 type BaseArgs = { connection: CommonQueryMethods };
 
@@ -172,48 +194,81 @@ async function _delete({ connection, id }: DeleteArgs): Promise<void> {
 
 export { _delete as delete };
 
-export type GetManyByNameAndSpecies = BaseArgs & {
+export type GetManyBySpeciesAndDateOfBirth = BaseArgs & {
   columns: {
-    name: string;
     species: string;
+    date_of_birth: Date;
   }[];
 };
 
-export async function getManyByNameAndSpecies({
+export async function getManyBySpeciesAndDateOfBirth({
   connection,
   columns,
-}: GetManyByNameAndSpecies): Promise<readonly Row[]> {
-  const tuples = columns.map((col) => [col.name, col.species]);
+}: GetManyBySpeciesAndDateOfBirth): Promise<readonly Row[]> {
+  const tuples = columns.map((col) => [
+    col.species,
+    col.date_of_birth.toISOString(),
+  ]);
 
   const query = sql.type(row)`
     SELECT ${aliasColumns("t")}
     FROM ${tableFragment} AS t
-    JOIN ${sql.unnest(tuples, ["text", "text"])} AS input(name, species)
-      ON  input.name = t.name
-      AND input.species = t.species`;
+    JOIN ${sql.unnest(tuples, [
+      "text",
+      "timestamptz",
+    ])} AS input(species, date_of_birth)
+      ON  input.species = t.species
+      AND input.date_of_birth = t.date_of_birth`;
 
   return connection.any(query);
 }
 
-export type GetByNameAndSpecies = BaseArgs & {
-  name: string;
+export type GetBySpeciesAndDateOfBirth = BaseArgs & {
   species: string;
+  date_of_birth: Date;
 };
 
-export async function getByNameAndSpecies({
+export async function getBySpeciesAndDateOfBirth({
   connection,
-  name,
   species,
-}: GetByNameAndSpecies): Promise<Row | null> {
-  const result = await getManyByNameAndSpecies({
+  date_of_birth,
+}: GetBySpeciesAndDateOfBirth): Promise<readonly Row[]> {
+  const result = await getManyBySpeciesAndDateOfBirth({
     connection,
     columns: [
       {
-        name,
         species,
+        date_of_birth,
       },
     ],
   });
 
+  return result;
+}
+
+export type GetManyByNameArgs = BaseArgs & {
+  columns: string[];
+};
+
+export async function getManyByName({
+  connection,
+  columns,
+}: GetManyByNameArgs): Promise<readonly Row[]> {
+  const list = columns.map((col) => col);
+  return connection.any(sql.type(row)`
+    SELECT ${columnsFragment}
+    FROM ${tableFragment}
+    WHERE name = ANY(${sql.array(list, "text")})`);
+}
+
+export type GetByNameArgs = BaseArgs & {
+  name: string;
+};
+
+export async function getByName({
+  connection,
+  name,
+}: GetByNameArgs): Promise<Row | null> {
+  const result = await getManyByName({ connection, columns: [name] });
   return result[0] ?? null;
 }
