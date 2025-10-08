@@ -8,6 +8,7 @@ import * as PostgresParser from "../parsers/postgres.parser";
 import * as SchemaParser from "../parsers/schema.parser";
 import * as DefaultConfigs from "../config/default";
 import * as ConfigParser from "../config/parser";
+import * as SlonikBuilder from "../builders/slonik.builder";
 
 const extractSchemaMod = await import("extract-pg-schema");
 const extractSchemas =
@@ -45,6 +46,23 @@ export async function run({ configPath }: RunArgs): Promise<void> {
       prettier_config: prettierConfig,
       output_path: path.join(parsedConfig.output_directory, "postgres"),
     });
+
+    const slonikOutputDirectory = path.join(
+      parsedConfig.output_directory,
+      "slonik",
+    );
+    await mkdir(slonikOutputDirectory, {
+      recursive: true,
+    });
+    const slonikFiles = await SlonikBuilder.build({});
+    for (const [fileName, content] of Object.entries(slonikFiles)) {
+      const formattedContent = await prettierFormat(content, prettierConfig);
+      await writeFile(
+        path.join(slonikOutputDirectory, fileName),
+        formattedContent,
+        "utf-8",
+      );
+    }
 
     for (const schema of Object.values(schemas)) {
       const schemaConfig =

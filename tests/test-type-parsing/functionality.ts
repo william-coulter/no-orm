@@ -2,10 +2,13 @@
 import { z } from "zod";
 import { Range } from "postgres-range";
 import { default as parseInterval } from "postgres-interval";
-import { pool } from "../slonik-test-connection";
+import { createDatabasePool } from "../slonik-test-connection";
+import { requiredTypeParsers } from "./expected/slonik/type-parsers";
 import * as Domains from "./expected/public/domains";
 import * as Ranges from "./expected/public/ranges";
 import * as TestTypeParsing from "./expected/public/tables/test_type_parsing";
+
+const pool = await createDatabasePool({ type_parsers: requiredTypeParsers });
 
 await pool.connect(async (connection) => {
   const create = await TestTypeParsing.create({

@@ -1,58 +1,24 @@
 import {
   createPool,
   createTypeParserPreset,
+  DatabasePool,
   DriverTypeParser,
   type Interceptor,
   type QueryResultRow,
   SchemaValidationError,
 } from "slonik";
-import { default as parseInterval, IPostgresInterval } from "postgres-interval";
 
-export const pool = await createPool(
-  process.env.POSTGRES_CONNECTION_STRING ?? "",
-  {
+type CreatePoolArgs = {
+  type_parsers: DriverTypeParser[];
+};
+
+export async function createDatabasePool({
+  type_parsers,
+}: CreatePoolArgs): Promise<DatabasePool> {
+  return createPool(process.env.POSTGRES_CONNECTION_STRING ?? "", {
     interceptors: [createResultParserInterceptor()],
-    typeParsers: [
-      ...createTypeParserPreset(),
-      ...createDateLikeParsers(),
-      createIntervalParser(),
-    ],
-  },
-);
-
-/**
- * A `no-orm` opinionated way to parse date-like types from Postgres into Javascript.
- *
- * By default Slonik parses these as `numbers`. This is because Javascript date objects
- * ignore microseconds whereas Postgres types have this. See discussion [here](https://github.com/gajus/slonik/issues/113#issuecomment-546042594).
- *
- * While this is a valid design choice, in most cases it's just easier to use `Date`
- * so `no-orm` will use this.
- */
-function createDateLikeParsers(): DriverTypeParser<Date>[] {
-  return [
-    {
-      name: "timestamptz",
-      parse: (value) => {
-        return new Date(value);
-      },
-    },
-    {
-      name: "timestamp",
-      parse: (value) => {
-        return new Date(value);
-      },
-    },
-  ];
-}
-
-function createIntervalParser(): DriverTypeParser<IPostgresInterval> {
-  return {
-    name: "interval",
-    parse: (value) => {
-      return parseInterval(value);
-    },
-  };
+    typeParsers: [...createTypeParserPreset(), ...type_parsers],
+  });
 }
 
 /**

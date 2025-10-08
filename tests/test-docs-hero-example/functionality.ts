@@ -1,6 +1,9 @@
 /** Tests that the functions from `model` execute without errors against the DB. */
-import { pool } from "../slonik-test-connection";
+import { createDatabasePool } from "../slonik-test-connection";
+import { requiredTypeParsers } from "./expected/slonik/type-parsers";
 import * as Penguins from "./expected/public/tables/penguins";
+
+const pool = await createDatabasePool({ type_parsers: requiredTypeParsers });
 
 await pool.connect(async (connection) => {
   const create = await Penguins.create({
