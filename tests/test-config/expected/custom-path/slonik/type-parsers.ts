@@ -1,5 +1,8 @@
-import { default as parseInterval, IPostgresInterval } from "postgres-interval";
-import { DriverTypeParser } from "slonik";
+import {
+  default as parseInterval,
+  type IPostgresInterval,
+} from "postgres-interval";
+import { type DriverTypeParser } from "slonik";
 
 /**
  * `no-orm` makes some opinionated decisions about what Postgres values

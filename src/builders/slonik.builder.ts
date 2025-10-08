@@ -9,8 +9,8 @@ export async function build({}: BuildArgs): Promise<Files> {
 }
 
 export function buildTypeParsers(): string {
-  return `import { default as parseInterval, IPostgresInterval } from "postgres-interval";
-import { DriverTypeParser } from "slonik";
+  return `import { default as parseInterval, type IPostgresInterval } from "postgres-interval";
+import { type DriverTypeParser } from "slonik";
 
 /**
  * \`no-orm\` makes some opinionated decisions about what Postgres values
