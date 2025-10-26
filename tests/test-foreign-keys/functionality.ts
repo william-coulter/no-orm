@@ -1,13 +1,12 @@
 /** Tests that the functions from `model` execute without errors against the DB. */
 import { createDatabasePool } from "../slonik-test-connection";
 import { requiredTypeParsers } from "./expected/slonik/type-parsers";
-import * as Penguins from "./expected/public/tables/penguins";
-import * as FlightAttempts from "./expected/public/tables/flight_attempts";
+import * as Tables from "./expected/public/tables";
 
 const pool = await createDatabasePool({ type_parsers: requiredTypeParsers });
 
 await pool.connect(async (connection) => {
-  const penguinCreate = await Penguins.create({
+  const penguinCreate = await Tables.Penguins.create({
     connection,
     shape: {
       name: "Willy the penguin",
@@ -18,7 +17,7 @@ await pool.connect(async (connection) => {
     },
   });
 
-  const flightAttemptsCreate = await FlightAttempts.create({
+  const flightAttemptsCreate = await Tables.FlightAttempts.create({
     connection,
     shape: {
       penguin: penguinCreate.id,
@@ -30,12 +29,12 @@ await pool.connect(async (connection) => {
     },
   });
 
-  const flightAttemptsRead = await FlightAttempts.get({
+  const flightAttemptsRead = await Tables.FlightAttempts.get({
     connection,
     id: flightAttemptsCreate.id,
   });
 
-  const anotherPenguin = await Penguins.create({
+  const anotherPenguin = await Tables.Penguins.create({
     connection,
     shape: {
       name: "This one actually performed the flight",
@@ -46,12 +45,12 @@ await pool.connect(async (connection) => {
     },
   });
 
-  const flightAttemptsUpdate = await FlightAttempts.update({
+  const flightAttemptsUpdate = await Tables.FlightAttempts.update({
     connection,
     newRow: { ...flightAttemptsRead, penguin: anotherPenguin.id },
   });
 
-  const _delete = await FlightAttempts.delete({
+  const _delete = await Tables.FlightAttempts.delete({
     connection,
     id: flightAttemptsUpdate.id,
   });

@@ -1,8 +1,7 @@
 /** Tests that the functions from `model` execute without errors against the DB. */
 import { createDatabasePool } from "../slonik-test-connection";
 import { requiredTypeParsers } from "./expected/slonik/type-parsers";
-import * as Penguins from "./expected/public/tables/penguins";
-import * as FlightAttempts from "./expected/public/tables/flight_attempts";
+import * as Tables from "./expected/public/tables";
 
 const pool = await createDatabasePool({ type_parsers: requiredTypeParsers });
 
@@ -12,7 +11,7 @@ await pool.connect(async (connection) => {
     favourite_snack: null,
   };
 
-  const penguinCreate1 = await Penguins.create({
+  const penguinCreate1 = await Tables.Penguins.create({
     connection,
     shape: {
       name: "Penguin Create 1",
@@ -22,7 +21,7 @@ await pool.connect(async (connection) => {
     },
   });
 
-  await Penguins.create({
+  await Tables.Penguins.create({
     connection,
     shape: {
       name: "Penguin Create 2",
@@ -32,7 +31,7 @@ await pool.connect(async (connection) => {
     },
   });
 
-  await Penguins.create({
+  await Tables.Penguins.create({
     connection,
     shape: {
       name: "Penguin Create 3",
@@ -42,7 +41,7 @@ await pool.connect(async (connection) => {
     },
   });
 
-  const penguinCreate4 = await Penguins.create({
+  const penguinCreate4 = await Tables.Penguins.create({
     connection,
     shape: {
       name: "Penguin Create 4",
@@ -54,7 +53,7 @@ await pool.connect(async (connection) => {
 
   // Test complicated tuple query.
   const getManyBySpeciesAndDateOfBirthResult =
-    await Penguins.getManyBySpeciesAndDateOfBirth({
+    await Tables.Penguins.getManyBySpeciesAndDateOfBirth({
       connection,
       columns: [
         {
@@ -83,17 +82,17 @@ await pool.connect(async (connection) => {
     );
   }
 
-  await Penguins.getManyByName({
+  await Tables.Penguins.getManyByName({
     connection,
     columns: [penguinCreate1.name],
   });
 
-  await Penguins.getByName({
+  await Tables.Penguins.getByName({
     connection,
     name: penguinCreate4.name,
   });
 
-  await FlightAttempts.createMany({
+  await Tables.FlightAttempts.createMany({
     connection,
     shapes: [
       {
@@ -115,22 +114,22 @@ await pool.connect(async (connection) => {
     ],
   });
 
-  await FlightAttempts.getManyByPenguin({
+  await Tables.FlightAttempts.getManyByPenguin({
     connection,
     columns: [penguinCreate1.id],
   });
 
-  await FlightAttempts.getByPenguin({
+  await Tables.FlightAttempts.getByPenguin({
     connection,
     penguin: penguinCreate1.id,
   });
 
-  await FlightAttempts.getManyByPenguinMap({
+  await Tables.FlightAttempts.getManyByPenguinMap({
     connection,
     columns: [penguinCreate1.id, penguinCreate4.id],
   });
 
-  await FlightAttempts.getManyByPenguinAndMethod({
+  await Tables.FlightAttempts.getManyByPenguinAndMethod({
     connection,
     columns: [{ method: "ski_jump", penguin: penguinCreate1.id }],
   });

@@ -1,4 +1,4 @@
-import { Schema } from "extract-pg-schema";
+import { Schema, TableDetails } from "extract-pg-schema";
 import path from "path";
 import { mkdir, writeFile } from "fs/promises";
 import { Options } from "prettier";
@@ -10,6 +10,7 @@ import * as DefaultConfigs from "../config/default";
 import * as EnumsBuilder from "../builders/enums.builder";
 import * as DomainsBuilder from "../builders/domains.builder";
 import * as RangesBuilder from "../builders/ranges.builder";
+import { snakeToPascalCase } from "../builders/helpers";
 
 export async function parse({
   schema,
@@ -57,6 +58,13 @@ export async function parse({
       prettier_config: prettier_config,
     });
   }
+
+  await buildTableIndex({
+    tables: schema.tables,
+    config: config,
+    output_path: path.join(schemaOutputPath, "tables/index.ts"),
+    prettier_config,
+  });
 }
 
 type ParseArgs = {
@@ -147,4 +155,33 @@ async function buildRanges({
       "utf-8",
     );
   }
+}
+
+type BuildTableIndexArgs = {
+  tables: TableDetails[];
+  output_path: string;
+  config: NonIgnoredConfig;
+  prettier_config: Options | null;
+};
+
+async function buildTableIndex({
+  tables,
+  config,
+  prettier_config,
+  output_path,
+}: BuildTableIndexArgs): Promise<void> {
+  const content = tables
+    .map(({ name }) => {
+      if (config.table_configs.get(name)?.ignore === true) {
+        return null;
+      }
+
+      const pascalCase = snakeToPascalCase(name);
+      return `export * as ${pascalCase} from "./${name}"`;
+    })
+    .filter((s) => s !== null)
+    .join(";\n");
+
+  const formattedContent = await prettierFormat(content, prettier_config);
+  await writeFile(output_path, formattedContent, "utf-8");
 }
