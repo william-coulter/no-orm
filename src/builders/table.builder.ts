@@ -626,14 +626,25 @@ function buildSingleColumnIndexFunction({
     return ${getFunctionReturnStatement};
   }`;
 
+  // If there is a foreign key on this index, we will build a map function.
   const reference = getColumnReference(column);
+  const getManyMapFunctionName = `${getManyFunctionName}Map`;
+  const getManyMapArgsName = `${getManyArgsName}`;
+  // TODO: One day we can conditional return `Row | null` if the index is unique.
+  const getManyMapFunctionValueType = `Row[]`;
+  const mapType = `Map<${columnTypescriptType}, ${getManyMapFunctionValueType}>`;
   const getManyMapFunction = reference
-    ? `export async function getManyByPenguinMap({
+    ? `export async function ${getManyMapFunctionName}({
   connection,
-  columns,
-}: GetManyByPenguinArgs): Promise<Map<${columnTypescriptType}, Row>> {
-  const rows = await getManyByPenguin({ connection, columns });
-  return new Map<${columnTypescriptType}, Row>(rows.map((row) => [row.${columnName}, row]));
+  ${getManyArgumentName},
+}: ${getManyMapArgsName}): Promise<${mapType}> {
+  const rows = await ${getManyFunctionName}({ connection, ${getManyArgumentName} });
+  const map = new ${mapType}(${getManyArgumentName}.map((${column.name}) => [${column.name}, []]));
+  for (const row of rows) {
+    const existing = map.get(row.${column.name})!;
+    map.set(row.${column.name}, [...existing, row]);
+  }
+  return map;
 }`
     : "";
 

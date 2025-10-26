@@ -233,9 +233,16 @@ export async function getByPenguin({
 export async function getManyByPenguinMap({
   connection,
   columns,
-}: GetManyByPenguinArgs): Promise<Map<PenguinsRow["id"], Row>> {
+}: GetManyByPenguinArgs): Promise<Map<PenguinsRow["id"], Row[]>> {
   const rows = await getManyByPenguin({ connection, columns });
-  return new Map<PenguinsRow["id"], Row>(rows.map((row) => [row.penguin, row]));
+  const map = new Map<PenguinsRow["id"], Row[]>(
+    columns.map((penguin) => [penguin, []]),
+  );
+  for (const row of rows) {
+    const existing = map.get(row.penguin)!;
+    map.set(row.penguin, [...existing, row]);
+  }
+  return map;
 }
 
 export type GetManyByPenguinAndMethod = BaseArgs & {
