@@ -65,6 +65,11 @@ export async function parse({
     output_path: path.join(schemaOutputPath, "tables/index.ts"),
     prettier_config,
   });
+
+  await buildIndex({
+    output_path: path.join(schemaOutputPath, "index.ts"),
+    prettier_config,
+  });
 }
 
 type ParseArgs = {
@@ -181,6 +186,26 @@ async function buildTableIndex({
     })
     .filter((s) => s !== null)
     .join(";\n");
+
+  const formattedContent = await prettierFormat(content, prettier_config);
+  await writeFile(output_path, formattedContent, "utf-8");
+}
+
+type BuildIndexArgs = {
+  output_path: string;
+  prettier_config: Options | null;
+};
+
+async function buildIndex({
+  prettier_config,
+  output_path,
+}: BuildIndexArgs): Promise<void> {
+  const content = [
+    `export * as Domains from "./domains"`,
+    `export * as Enums from "./enums"`,
+    `export * as Ranges from "./ranges"`,
+    `export * as Tables from "./tables"`,
+  ].join(";\n");
 
   const formattedContent = await prettierFormat(content, prettier_config);
   await writeFile(output_path, formattedContent, "utf-8");
