@@ -47,11 +47,13 @@ export async function run({}: RunArgs): Promise<void> {
 
 type RunArgs = {};
 
-// FIXME: Maybe hard-code the local DB in here.
 async function buildEmptyConfig(path: string): Promise<void> {
   const emptyConfig = `import type { NoOrmConfig } from "no-orm";
 
-const config: NoOrmConfig = {};
+const config: NoOrmConfig = {
+  process.env.NO_ORM_POSTGRES_CONNECTION_STRING ??
+    "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable",
+};
 
 export default config;
 `;
