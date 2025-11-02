@@ -16,7 +16,7 @@ CREATE INDEX test_functional_index ON penguins (lower(name));
 CREATE TABLE flight_attempts (
   id SERIAL PRIMARY KEY,
   penguin INT NOT NULL REFERENCES penguins(id),
-  method TEXT NOT NULL, -- FIXME: Make me an enum.
+  method TEXT NOT NULL,
   attempted_at TIMESTAMP WITH TIME ZONE NOT NULL,
   altitude_cm INT NOT NULL,
   success BOOLEAN NOT NULL,
