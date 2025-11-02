@@ -94,7 +94,7 @@ type RunArgs = {
 };
 
 /** Will format the file according to the prettier config. */
-// FIXME: Format the entire `no-orm` directory once at the end.
+// FIXME: Pass me in as an argument.
 export async function prettierFormat(
   code: string,
   config: Options | null,
