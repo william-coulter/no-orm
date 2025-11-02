@@ -9,9 +9,10 @@ import * as SchemaParser from "../parsers/schema.parser";
 import * as DefaultConfigs from "../config/default";
 import * as ConfigParser from "../config/parser";
 import * as SlonikBuilder from "../builders/slonik.builder";
+import type { Schema } from "extract-pg-schema";
 
 const extractSchemaMod = await import("extract-pg-schema");
-const extractSchemas =
+const extractSchemasModule =
   extractSchemaMod.extractSchemas ?? extractSchemaMod.default?.extractSchemas;
 
 export async function run({ configPath }: RunArgs): Promise<void> {
@@ -27,10 +28,7 @@ export async function run({ configPath }: RunArgs): Promise<void> {
     const postgresConnectionString =
       ConfigParser.parsePostgresConnectionString(config);
 
-    // FIXME: A better error message when DB cannot be connected to.
-    const schemas = await extractSchemas({
-      connectionString: postgresConnectionString,
-    });
+    const schemas = await extractSchemas(postgresConnectionString);
 
     const parsedConfig = ConfigParser.parse(config, schemas);
 
@@ -105,7 +103,28 @@ async function importConfig(path: string): Promise<any> {
   try {
     return await import(path);
   } catch (e) {
-    logger.error(`Could not import config file ${path}`);
+    logger.error(`Could not import config file ${path}.`);
+    if (e instanceof Error) {
+      logger.error(e.message);
+    }
+    process.exit(1);
+  }
+}
+
+async function extractSchemas(
+  postgresConnectionString: string,
+): Promise<Record<string, Schema>> {
+  try {
+    return await extractSchemasModule({
+      connectionString: postgresConnectionString,
+    });
+  } catch (e) {
+    logger.error(
+      `Could not extract schemas from DB ${postgresConnectionString}`,
+    );
+    if (e instanceof Error) {
+      logger.error(e.message);
+    }
     process.exit(1);
   }
 }
