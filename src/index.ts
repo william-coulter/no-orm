@@ -2,6 +2,7 @@
 
 import { Command } from "commander";
 
+import { version } from "../package.json";
 import * as GenerateCommand from "./commands/generate";
 import * as InitCommand from "./commands/init";
 import * as logger from "./logger";
@@ -29,6 +30,8 @@ program
   .action(async (options: { configPath: string }) => {
     await GenerateCommand.run(options);
   });
+
+program.version(version);
 
 program.arguments("<command>").action((cmd) => {
   logger.error(`Unknown command: '${cmd}'`);
