@@ -6,7 +6,7 @@ import * as Domains from "../domains";
 import * as Ranges from "../ranges";
 
 export const row = z.object({
-  id: z.number().brand<"public.test_type_parsing.id">(),
+  not_called_id: z.number().brand<"public.test_type_parsing.not_called_id">(),
   a_bigint: z.bigint(),
   a_bigserial: z.bigint(),
   a_bit: z.string(),
@@ -62,7 +62,7 @@ export const row = z.object({
 
 export type Row = z.infer<typeof row>;
 
-export type Id = Row["id"];
+export type Id = Row["not_called_id"];
 
 export const tableFragment = sql.identifier(["public", "test_type_parsing"]);
 
@@ -274,7 +274,7 @@ export async function getMany({
   const query = sql.type(row)`
     SELECT ${columnsFragment}
     FROM ${tableFragment}
-    WHERE id = ANY(${sql.array(ids, "int4")})`;
+    WHERE not_called_id = ANY(${sql.array(ids, "int4")})`;
 
   return connection.any(query);
 }
@@ -291,7 +291,7 @@ export async function getManyMap({
   ids,
 }: GetManyArgs): Promise<Map<Id, Row>> {
   const rows = await getMany({ connection, ids });
-  return new Map<Id, Row>(rows.map((row) => [row.id, row]));
+  return new Map<Id, Row>(rows.map((row) => [row.not_called_id, row]));
 }
 
 export type FindManyArgs = BaseArgs & { ids: number[] };
@@ -362,7 +362,7 @@ export type Update = {
   a_tsrange: Postgres.Types.Tsrange;
   a_tstzrange: Postgres.Types.Tstzrange;
   a_daterange: Postgres.Types.Daterange;
-} & { id: Id };
+} & { not_called_id: Id };
 
 export type UpdateManyArgs = BaseArgs & { newRows: Update[] };
 
@@ -371,7 +371,7 @@ export function updateMany({
   newRows,
 }: UpdateManyArgs): Promise<readonly Row[]> {
   const tuples = newRows.map((newRow) => [
-    newRow.id,
+    newRow.not_called_id,
     newRow.a_bigint,
     newRow.a_bigserial,
     newRow.a_bit,
@@ -531,8 +531,8 @@ export function updateMany({
       "tsrange",
       "tstzrange",
       "daterange",
-    ])} AS input(id, a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum, a_text_short, a_float_range, a_int4range, a_int8range, a_numrange, a_tsrange, a_tstzrange, a_daterange)
-    WHERE t.id = input.id
+    ])} AS input(not_called_id, a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum, a_text_short, a_float_range, a_int4range, a_int8range, a_numrange, a_tsrange, a_tstzrange, a_daterange)
+    WHERE t.not_called_id = input.not_called_id
     RETURNING ${aliasColumns("t")}`;
 
   return connection.any(query);
@@ -553,7 +553,7 @@ export async function deleteMany({
 }: DeleteManyArgs): Promise<void> {
   const query = sql.type(row)`
     DELETE FROM ${tableFragment}
-    WHERE id = ANY(${sql.array(ids, "int4")})`;
+    WHERE not_called_id = ANY(${sql.array(ids, "int4")})`;
 
   await connection.query(query);
 }

@@ -55,7 +55,7 @@ ${buildRow({ columns: nonIgnoredColumns })}
 
 ${buildRowType()}
 
-${buildIdType()}
+${buildIdType({ primaryKey })}
 
 ${buildTableFragment({ schemaName: table.schemaName, tableName: table.name })}
 
@@ -85,7 +85,7 @@ ${buildGetArgsType()}
 
 ${buildGetFunction()}
 
-${buildGetManyMapFunction()}
+${buildGetManyMapFunction({ primaryKey })}
 
 ${buildFindFunctions({ primaryKey })}
 
@@ -205,10 +205,13 @@ function buildRowType(): string {
   return `export type Row = z.infer<typeof row>;`;
 }
 
+type BuildIdTypeArgs = {
+  primaryKey: TableColumn;
+};
+
 /** Builds the `Id` type. */
-function buildIdType(): string {
-  // FIXME: This should be based on the primary key, not hard-coded "id".
-  return `export type Id = Row["id"];`;
+function buildIdType({ primaryKey }: BuildIdTypeArgs): string {
+  return `export type Id = Row["${primaryKey.name}"];`;
 }
 
 type BuildTableFragmentArgs = { schemaName: string; tableName: string };
@@ -353,13 +356,17 @@ function buildGetFunction(): string {
 }`;
 }
 
-function buildGetManyMapFunction(): string {
+function buildGetManyMapFunction({
+  primaryKey,
+}: {
+  primaryKey: TableColumn;
+}): string {
   return `export async function getManyMap({
   connection,
   ids,
 }: GetManyArgs): Promise<Map<Id, Row>> {
   const rows = await getMany({ connection, ids });
-  return new Map<Id, Row>(rows.map((row) => [row.id, row]));
+  return new Map<Id, Row>(rows.map((row) => [row.${primaryKey.name}, row]));
 }`;
 }
 

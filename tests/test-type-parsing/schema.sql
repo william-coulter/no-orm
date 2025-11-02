@@ -13,7 +13,7 @@ CREATE TYPE float_range AS RANGE (
 );
 
 CREATE TABLE test_type_parsing (
-  id SERIAL PRIMARY KEY,
+  not_called_id SERIAL PRIMARY KEY,
 
   a_bigint BIGINT NOT NULL,
   a_bigserial BIGSERIAL NOT NULL,

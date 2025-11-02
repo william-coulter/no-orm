@@ -82,13 +82,13 @@ await pool.connect(async (connection) => {
 
   const read = await Tables.TestTypeParsing.get({
     connection,
-    id: create.id,
+    id: create.not_called_id,
   });
 
   const update = await Tables.TestTypeParsing.update({
     connection,
     newRow: {
-      id: read.id,
+      not_called_id: read.not_called_id,
       a_bigint: BigInt(9876543210),
       a_bigserial: BigInt(2),
       a_bit: "11001100",
@@ -153,7 +153,7 @@ await pool.connect(async (connection) => {
 
   const _delete = await Tables.TestTypeParsing.delete({
     connection,
-    id: update.id,
+    id: update.not_called_id,
   });
 });
 
