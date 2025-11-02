@@ -20,8 +20,7 @@ export async function run({ configPath }: RunArgs): Promise<void> {
       ? configPath
       : path.join(process.cwd(), configPath);
 
-    // FIXME: A better error message when config doesn't exist.
-    const configModule = await import(fullPathToConfig);
+    const configModule = await importConfig(fullPathToConfig);
     const config = noOrmConfigSchema.parse(
       configModule.default ?? configModule,
     );
@@ -100,4 +99,13 @@ export async function prettierFormat(
   config: Options | null,
 ): Promise<string> {
   return format(code, { parser: "typescript", config });
+}
+
+async function importConfig(path: string): Promise<any> {
+  try {
+    return await import(path);
+  } catch (e) {
+    logger.error(`Could not import config file ${path}`);
+    process.exit(1);
+  }
 }
