@@ -1,11 +1,9 @@
 import { Schema, TableDetails } from "extract-pg-schema";
 import path from "path";
 import { mkdir, writeFile } from "fs/promises";
-import { Options } from "prettier";
 import * as logger from "../logger";
 import * as TableParser from "./table.parser";
 import { ParsedSchemaConfig } from "../config/parser";
-import { prettierFormat } from "../commands/generate";
 import * as DefaultConfigs from "../config/default";
 import * as EnumsBuilder from "../builders/enums.builder";
 import * as DomainsBuilder from "../builders/domains.builder";
@@ -16,7 +14,7 @@ export async function parse({
   schema,
   output_path,
   config,
-  prettier_config,
+  code_formatter,
 }: ParseArgs): Promise<void> {
   const schemaOutputPath = path.join(output_path, schema.name);
   await mkdir(schemaOutputPath, {
@@ -26,19 +24,19 @@ export async function parse({
   await buildEnums({
     schema,
     output_path: path.join(schemaOutputPath, "enums"),
-    prettier_config,
+    code_formatter,
   });
 
   await buildDomains({
     schema,
     output_path: path.join(schemaOutputPath, "domains"),
-    prettier_config,
+    code_formatter,
   });
 
   await buildRanges({
     schema,
     output_path: path.join(schemaOutputPath, "ranges"),
-    prettier_config,
+    code_formatter,
   });
 
   for (const table of Object.values(schema.tables)) {
@@ -55,7 +53,7 @@ export async function parse({
       table: table,
       config: tableConfig,
       output_path: path.join(schemaOutputPath, "tables"),
-      prettier_config: prettier_config,
+      code_formatter: code_formatter,
     });
   }
 
@@ -63,12 +61,12 @@ export async function parse({
     tables: schema.tables,
     config: config,
     output_path: path.join(schemaOutputPath, "tables/index.ts"),
-    prettier_config,
+    code_formatter,
   });
 
   await buildIndex({
     output_path: path.join(schemaOutputPath, "index.ts"),
-    prettier_config,
+    code_formatter,
   });
 }
 
@@ -76,7 +74,7 @@ type ParseArgs = {
   schema: Schema;
   output_path: string;
   config: NonIgnoredConfig;
-  prettier_config: Options | null;
+  code_formatter: (raw: string) => Promise<string>;
 };
 
 export type NonIgnoredConfig = Extract<ParsedSchemaConfig, { ignore?: false }>;
@@ -84,13 +82,13 @@ export type NonIgnoredConfig = Extract<ParsedSchemaConfig, { ignore?: false }>;
 type BuildEnumsArgs = {
   schema: Schema;
   output_path: string;
-  prettier_config: Options | null;
+  code_formatter: (raw: string) => Promise<string>;
 };
 
 async function buildEnums({
   schema,
   output_path,
-  prettier_config,
+  code_formatter,
 }: BuildEnumsArgs): Promise<void> {
   await mkdir(output_path, { recursive: true });
 
@@ -99,7 +97,7 @@ async function buildEnums({
   });
 
   for (const [fileName, content] of Object.entries(files)) {
-    const formattedContent = await prettierFormat(content, prettier_config);
+    const formattedContent = await code_formatter(content);
     await writeFile(
       path.join(output_path, fileName),
       formattedContent,
@@ -111,13 +109,13 @@ async function buildEnums({
 type BuildDomainsArgs = {
   schema: Schema;
   output_path: string;
-  prettier_config: Options | null;
+  code_formatter: (raw: string) => Promise<string>;
 };
 
 async function buildDomains({
   schema,
   output_path,
-  prettier_config,
+  code_formatter,
 }: BuildDomainsArgs): Promise<void> {
   await mkdir(output_path, { recursive: true });
 
@@ -126,7 +124,7 @@ async function buildDomains({
   });
 
   for (const [fileName, content] of Object.entries(files)) {
-    const formattedContent = await prettierFormat(content, prettier_config);
+    const formattedContent = await code_formatter(content);
     await writeFile(
       path.join(output_path, fileName),
       formattedContent,
@@ -138,13 +136,13 @@ async function buildDomains({
 type BuildRangesArgs = {
   schema: Schema;
   output_path: string;
-  prettier_config: Options | null;
+  code_formatter: (raw: string) => Promise<string>;
 };
 
 async function buildRanges({
   schema,
   output_path,
-  prettier_config,
+  code_formatter,
 }: BuildRangesArgs): Promise<void> {
   await mkdir(output_path, { recursive: true });
 
@@ -153,7 +151,7 @@ async function buildRanges({
   });
 
   for (const [fileName, content] of Object.entries(files)) {
-    const formattedContent = await prettierFormat(content, prettier_config);
+    const formattedContent = await code_formatter(content);
     await writeFile(
       path.join(output_path, fileName),
       formattedContent,
@@ -166,13 +164,13 @@ type BuildTableIndexArgs = {
   tables: TableDetails[];
   output_path: string;
   config: NonIgnoredConfig;
-  prettier_config: Options | null;
+  code_formatter: (raw: string) => Promise<string>;
 };
 
 async function buildTableIndex({
   tables,
   config,
-  prettier_config,
+  code_formatter,
   output_path,
 }: BuildTableIndexArgs): Promise<void> {
   const content = tables
@@ -187,18 +185,18 @@ async function buildTableIndex({
     .filter((s) => s !== null)
     .join(";\n");
 
-  const formattedContent = await prettierFormat(content, prettier_config);
+  const formattedContent = await code_formatter(content);
   await writeFile(output_path, formattedContent, "utf-8");
 }
 
 type BuildIndexArgs = {
   output_path: string;
-  prettier_config: Options | null;
+  code_formatter: (raw: string) => Promise<string>;
 };
 
 async function buildIndex({
-  prettier_config,
   output_path,
+  code_formatter,
 }: BuildIndexArgs): Promise<void> {
   const content = [
     `export * as Domains from "./domains"`,
@@ -207,6 +205,6 @@ async function buildIndex({
     `export * as Tables from "./tables"`,
   ].join(";\n");
 
-  const formattedContent = await prettierFormat(content, prettier_config);
+  const formattedContent = await code_formatter(content);
   await writeFile(output_path, formattedContent, "utf-8");
 }

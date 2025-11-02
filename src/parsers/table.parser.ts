@@ -1,16 +1,14 @@
 import { TableDetails } from "extract-pg-schema";
 import path from "path";
 import { mkdir, writeFile } from "fs/promises";
-import { Options } from "prettier";
 import { ParsedTableConfig } from "../config/parser";
-import { prettierFormat } from "../commands/generate";
 import * as TableBuilder from "../builders/table.builder";
 
 export async function parse({
   table,
   output_path,
   config,
-  prettier_config,
+  code_formatter,
 }: ParseArgs): Promise<void> {
   await mkdir(output_path, {
     recursive: true,
@@ -21,10 +19,7 @@ export async function parse({
     config,
   });
 
-  const formattedTableFileContent = await prettierFormat(
-    tableFileContent,
-    prettier_config,
-  );
+  const formattedTableFileContent = await code_formatter(tableFileContent);
 
   await writeFile(
     path.join(output_path, `${table.name}.ts`),
@@ -37,7 +32,7 @@ type ParseArgs = {
   table: TableDetails;
   output_path: string;
   config: NonIgnoredConfig;
-  prettier_config: Options | null;
+  code_formatter: (raw: string) => Promise<string>;
 };
 
 export type NonIgnoredConfig = Extract<ParsedTableConfig, { ignore?: false }>;

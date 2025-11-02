@@ -32,15 +32,16 @@ export async function run({ configPath }: RunArgs): Promise<void> {
 
     const parsedConfig = ConfigParser.parse(config, schemas);
 
-    // TODO: Make me a config argument.
+    // IDEA: This can be a config argument.
     const prettierConfig = await resolveConfig(".prettierrc");
+    const codeFormatter = buildFormatter(prettierConfig);
 
     await mkdir(parsedConfig.output_directory, {
       recursive: true,
     });
 
     await PostgresParser.parse({
-      prettier_config: prettierConfig,
+      code_formatter: codeFormatter,
       output_path: path.join(parsedConfig.output_directory, "postgres"),
     });
 
@@ -53,7 +54,7 @@ export async function run({ configPath }: RunArgs): Promise<void> {
     });
     const slonikFiles = await SlonikBuilder.build({});
     for (const [fileName, content] of Object.entries(slonikFiles)) {
-      const formattedContent = await prettierFormat(content, prettierConfig);
+      const formattedContent = await codeFormatter(content);
       await writeFile(
         path.join(slonikOutputDirectory, fileName),
         formattedContent,
@@ -75,7 +76,7 @@ export async function run({ configPath }: RunArgs): Promise<void> {
         schema: schema,
         output_path: parsedConfig.output_directory,
         config: schemaConfig,
-        prettier_config: prettierConfig,
+        code_formatter: codeFormatter,
       });
     }
   } catch (err) {
@@ -90,13 +91,11 @@ type RunArgs = {
   configPath: string;
 };
 
-/** Will format the file according to the prettier config. */
-// FIXME: Pass me in as an argument.
-export async function prettierFormat(
-  code: string,
+/** Returns a formatter function that will format code using a prettier config. */
+export function buildFormatter(
   config: Options | null,
-): Promise<string> {
-  return format(code, { parser: "typescript", config });
+): (code: string) => Promise<string> {
+  return async (code) => format(code, { parser: "typescript", config });
 }
 
 async function importConfig(path: string): Promise<any> {
