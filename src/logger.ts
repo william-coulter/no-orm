@@ -5,11 +5,11 @@ export function info(message: string): void {
 }
 
 export function warn(message: string): void {
-  console.warn(chalk.yellow(`⚠️ [WARN]: ${message}`));
+  console.warn(chalk.yellow(`[WARN]: ${message}`));
 }
 
 export function error(message: string): void {
-  console.error(chalk.red(`💀 [ERROR]: ${message}`));
+  console.error(chalk.red(`[ERROR]: ${message}`));
 }
 
 export function debug(message: string): void {
