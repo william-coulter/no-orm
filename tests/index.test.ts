@@ -129,6 +129,41 @@ describe("no-orm", () => {
     });
     expect(functionalityResult.exitCode).toEqual(0);
   });
+
+  describe("atomicity", () => {
+    it("should leave existing files unchanged when no-orm fails", async () => {
+      const testDirectory = path.join(TESTS_DIR, "atomicity");
+      const schemaPath = path.join(testDirectory, "schema.sql");
+      const schemaSql = await fs.readFile(schemaPath, "utf8");
+      await client.query(schemaSql);
+
+      const configPath = path.join(testDirectory, "no-orm.config.ts");
+      const cliPath = path.resolve(__dirname, "../src/index.ts");
+      const testOutputDir = path.join(testDirectory, "existing");
+
+      const currentMTime = (await fs.stat(testDirectory)).mtimeMs;
+
+      const noOrmResult = await execa(
+        "npx",
+        ["tsx", cliPath, "generate", "--config-path", configPath],
+        {
+          env: {
+            ...process.env,
+            POSTGRES_CONNECTION_STRING: connectionString,
+            OUTPUT_DIRECTORY: testOutputDir,
+          },
+          reject: false,
+        },
+      );
+      expect(noOrmResult.exitCode).toEqual(1);
+
+      const newMTime = (await fs.stat(testDirectory)).mtimeMs;
+      // Note that this timestamp doesn't update if only the contents of a file changes.
+      // Considering the existing directory has very little in it and if `no-orm` were to
+      // run, more files would be added to this directory, this is a sufficient assertion.
+      expect(newMTime).toEqual(currentMTime);
+    });
+  });
 });
 
 /* Recursively walks a directory and return all file paths relative to `baseDir`. */

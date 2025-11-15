@@ -1,0 +1,1 @@
+Yes this isn't generated no-orm output however it will do for the test.
