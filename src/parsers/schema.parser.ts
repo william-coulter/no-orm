@@ -39,6 +39,10 @@ export async function parse({
     code_formatter,
   });
 
+  await mkdir(path.join(schemaOutputPath, "tables"), {
+    recursive: true,
+  });
+
   for (const table of Object.values(schema.tables)) {
     const tableConfig =
       config.table_configs.get(table.name) ??

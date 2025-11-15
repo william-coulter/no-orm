@@ -10,10 +10,6 @@ export async function parse({
   config,
   code_formatter,
 }: ParseArgs): Promise<void> {
-  await mkdir(output_path, {
-    recursive: true,
-  });
-
   const tableFileContent = await TableBuilder.build({
     table,
     config,
