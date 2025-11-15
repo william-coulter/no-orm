@@ -14,13 +14,13 @@ export async function withLoadingSpinner({
     await action();
     spinner.success(successMessage);
   } catch (e) {
-    spinner.error(`${failureMessage}: ${e}`);
+    spinner.error(failureMessage ? `${failureMessage}: ${e}` : undefined);
   }
 }
 
 type Args = {
   action: () => Promise<any>;
-  spinnerText: string;
-  successMessage: string;
-  failureMessage: string;
+  spinnerText?: string;
+  successMessage?: string;
+  failureMessage?: string;
 };

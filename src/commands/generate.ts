@@ -10,12 +10,23 @@ import * as DefaultConfigs from "../config/default";
 import * as ConfigParser from "../config/parser";
 import * as SlonikBuilder from "../builders/slonik.builder";
 import type { Schema } from "extract-pg-schema";
+import { withLoadingSpinner } from "./helpers/with-loading-spinner";
 
 const extractSchemaMod = await import("extract-pg-schema");
 const extractSchemasModule =
   extractSchemaMod.extractSchemas ?? extractSchemaMod.default?.extractSchemas;
 
-export async function run({ configPath }: RunArgs): Promise<void> {
+export async function run(args: RunArgs): Promise<void> {
+  await withLoadingSpinner({
+    action: () => doRun(args),
+  });
+}
+
+type RunArgs = {
+  configPath: string;
+};
+
+async function doRun({ configPath }: RunArgs): Promise<void> {
   const fullPathToConfig = path.isAbsolute(configPath)
     ? configPath
     : path.join(process.cwd(), configPath);
@@ -67,12 +78,8 @@ export async function run({ configPath }: RunArgs): Promise<void> {
   }
 }
 
-type RunArgs = {
-  configPath: string;
-};
-
 /** Does the thing that `no-orm` advertises on the box. */
-export async function generate({
+async function generate({
   schemas,
   schema_config,
   code_formatter,
