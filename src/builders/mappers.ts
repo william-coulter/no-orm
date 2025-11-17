@@ -99,15 +99,23 @@ export function columnToSlonikPrimitiveValue({
   variableName,
 }: SerialiseToUnnestValueArguments): string {
   if (isDateLike(column)) {
-    return `${variableName}.toISOString()`;
+    return column.isNullable
+      ? `${variableName}?.toISOString() ?? null`
+      : `${variableName}.toISOString()`;
   } else if (isJsonLike(column)) {
-    return `JSON.stringify(${variableName})`;
+    return column.isNullable
+      ? `!!${variableName} ? JSON.stringify(${variableName}) : null`
+      : `JSON.stringify(${variableName})`;
   } else if (isIntervalColumn(column)) {
-    return `${variableName}.toPostgres()`;
+    return column.isNullable
+      ? `${variableName}?.toPostgres() ?? null`
+      : `${variableName}.toPostgres()`;
   } else if (isBuiltInRange(column)) {
-    return `${variableName}.toPostgres(Postgres.Serializers.range)`;
+    return column.isNullable
+      ? `${variableName}?.toPostgres(Postgres.Serializers.range) ?? null`
+      : `${variableName}.toPostgres(Postgres.Serializers.range)`;
   } else {
-    return `${variableName}`;
+    return variableName;
   }
 }
 
