@@ -1,6 +1,6 @@
 # TODO List:
 
-- Use a linter to enforce import order (and other things).
+- Ignore tables with an unsupported type or no primary key.
 - Update README and point to docs.
 
 # No ORM!
