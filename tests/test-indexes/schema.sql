@@ -30,3 +30,6 @@ CREATE TABLE flight_attempts (
 CREATE INDEX ON flight_attempts (penguin);
 
 CREATE UNIQUE INDEX ON flight_attempts (penguin, method);
+
+-- Doesn't really make sense as an index but just to get coverage on a nullable column.
+CREATE INDEX ON flight_attempts (failure_reason);

@@ -290,3 +290,33 @@ export async function getByPenguinAndMethod({
 
   return result[0] ?? null;
 }
+
+export type GetManyByFailureReasonArgs = BaseArgs & {
+  columns: (string | null)[];
+};
+
+export async function getManyByFailureReason({
+  connection,
+  columns,
+}: GetManyByFailureReasonArgs): Promise<readonly Row[]> {
+  const list = columns.map((col) => col);
+  return connection.any(sql.type(row)`
+    SELECT ${columnsFragment}
+    FROM ${tableFragment}
+    WHERE failure_reason = ANY(${sql.array(list, "text")})`);
+}
+
+export type GetByFailureReasonArgs = BaseArgs & {
+  failure_reason: string | null;
+};
+
+export async function getByFailureReason({
+  connection,
+  failure_reason,
+}: GetByFailureReasonArgs): Promise<readonly Row[]> {
+  const result = await getManyByFailureReason({
+    connection,
+    columns: [failure_reason],
+  });
+  return result;
+}

@@ -593,7 +593,7 @@ function buildSingleColumnIndexFunction({
   const getManyArgsName = `GetManyBy${columnNamePascalCase}Args`;
   const getManyArgumentName = "columns";
   const getManyArgs = `export type ${getManyArgsName} = BaseArgs & {
-    ${getManyArgumentName}: ${columnTypescriptType}[];
+    ${getManyArgumentName}: (${columnTypescriptType})[];
   }`;
   const slonikPrimitiveMapping = columnToSlonikPrimitiveValue({
     column: column,
