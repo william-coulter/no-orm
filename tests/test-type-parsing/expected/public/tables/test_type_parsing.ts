@@ -24,6 +24,7 @@ export const row = z.object({
   a_int: z.number(),
   a_interval: Postgres.Schemas.interval,
   a_json: Postgres.Schemas.json,
+  a_json_nullable: Postgres.Schemas.json.nullable(),
   a_jsonb: Postgres.Schemas.json,
   a_line: z.any(),
   a_lseg: z.any(),
@@ -50,8 +51,11 @@ export const row = z.object({
   a_uuid: z.string(),
   a_xml: z.string(),
   a_enum: Enums.Schemas.myEnum,
+  a_enum_nullable: Enums.Schemas.myEnum.nullable(),
   a_text_short: Domains.Schemas.textShort,
+  a_text_short_nullable: Domains.Schemas.textShort.nullable(),
   a_float_range: Ranges.Schemas.floatRange,
+  a_float_range_nullable: Ranges.Schemas.floatRange.nullable(),
   a_int4range: Postgres.Schemas.int4range,
   a_int8range: Postgres.Schemas.int8range,
   a_numrange: Postgres.Schemas.numrange,
@@ -100,6 +104,7 @@ export type Create = {
   a_int: number;
   a_interval: Postgres.Types.Interval;
   a_json: Postgres.Types.Json;
+  a_json_nullable: Postgres.Types.Json | null;
   a_jsonb: Postgres.Types.Json;
   a_line: any;
   a_lseg: any;
@@ -126,8 +131,11 @@ export type Create = {
   a_uuid: string;
   a_xml: string;
   a_enum: Enums.Types.MyEnum;
+  a_enum_nullable: Enums.Types.MyEnum | null;
   a_text_short: Domains.Types.TextShort;
+  a_text_short_nullable: Domains.Types.TextShort | null;
   a_float_range: Ranges.Types.FloatRange;
+  a_float_range_nullable: Ranges.Types.FloatRange | null;
   a_int4range: Postgres.Types.Int4range;
   a_int8range: Postgres.Types.Int8range;
   a_numrange: Postgres.Types.Numrange;
@@ -160,6 +168,7 @@ export async function createMany({
     shape.a_int,
     shape.a_interval.toPostgres(),
     JSON.stringify(shape.a_json),
+    !!shape.a_json_nullable ? JSON.stringify(shape.a_json_nullable) : null,
     JSON.stringify(shape.a_jsonb),
     shape.a_line,
     shape.a_lseg,
@@ -186,8 +195,11 @@ export async function createMany({
     shape.a_uuid,
     shape.a_xml,
     shape.a_enum,
+    shape.a_enum_nullable,
     shape.a_text_short,
+    shape.a_text_short_nullable,
     shape.a_float_range,
+    shape.a_float_range_nullable,
     shape.a_int4range.toPostgres(Postgres.Serializers.range),
     shape.a_int8range.toPostgres(Postgres.Serializers.range),
     shape.a_numrange.toPostgres(Postgres.Serializers.range),
@@ -215,6 +227,7 @@ export async function createMany({
       a_int,
       a_interval,
       a_json,
+      a_json_nullable,
       a_jsonb,
       a_line,
       a_lseg,
@@ -241,8 +254,11 @@ export async function createMany({
       a_uuid,
       a_xml,
       a_enum,
+      a_enum_nullable,
       a_text_short,
+      a_text_short_nullable,
       a_float_range,
+      a_float_range_nullable,
       a_int4range,
       a_int8range,
       a_numrange,
@@ -250,9 +266,9 @@ export async function createMany({
       a_tstzrange,
       a_daterange
     )
-    SELECT a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum, a_text_short, a_float_range, a_int4range, a_int8range, a_numrange, a_tsrange, a_tstzrange, a_daterange
-    FROM ${sql.unnest(tuples, ["int8", "int8", "bit", "varbit", "bool", "box", "bytea", "bpchar", "varchar", "cidr", "circle", "date", "float8", "inet", "int4", "interval", "json", "jsonb", "line", "lseg", "macaddr", "macaddr8", "money", "numeric", "path", "pg_lsn", "pg_snapshot", "point", "polygon", "float4", "int2", "int2", "int4", "text", "time", "timetz", "timestamp", "timestamptz", "tsquery", "tsvector", "uuid", "xml", "my_enum", "text_short", "float_range", "int4range", "int8range", "numrange", "tsrange", "tstzrange", "daterange"])}
-      AS input(a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum, a_text_short, a_float_range, a_int4range, a_int8range, a_numrange, a_tsrange, a_tstzrange, a_daterange)
+    SELECT a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_json_nullable, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum, a_enum_nullable, a_text_short, a_text_short_nullable, a_float_range, a_float_range_nullable, a_int4range, a_int8range, a_numrange, a_tsrange, a_tstzrange, a_daterange
+    FROM ${sql.unnest(tuples, ["int8", "int8", "bit", "varbit", "bool", "box", "bytea", "bpchar", "varchar", "cidr", "circle", "date", "float8", "inet", "int4", "interval", "json", "json", "jsonb", "line", "lseg", "macaddr", "macaddr8", "money", "numeric", "path", "pg_lsn", "pg_snapshot", "point", "polygon", "float4", "int2", "int2", "int4", "text", "time", "timetz", "timestamp", "timestamptz", "tsquery", "tsvector", "uuid", "xml", "my_enum", "my_enum", "text_short", "text_short", "float_range", "float_range", "int4range", "int8range", "numrange", "tsrange", "tstzrange", "daterange"])}
+      AS input(a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_json_nullable, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum, a_enum_nullable, a_text_short, a_text_short_nullable, a_float_range, a_float_range_nullable, a_int4range, a_int8range, a_numrange, a_tsrange, a_tstzrange, a_daterange)
     RETURNING ${columnsFragment}`;
 
   return connection.any(query);
@@ -328,6 +344,7 @@ export type Update = {
   a_int: number;
   a_interval: Postgres.Types.Interval;
   a_json: Postgres.Types.Json;
+  a_json_nullable: Postgres.Types.Json | null;
   a_jsonb: Postgres.Types.Json;
   a_line: any;
   a_lseg: any;
@@ -354,8 +371,11 @@ export type Update = {
   a_uuid: string;
   a_xml: string;
   a_enum: Enums.Types.MyEnum;
+  a_enum_nullable: Enums.Types.MyEnum | null;
   a_text_short: Domains.Types.TextShort;
+  a_text_short_nullable: Domains.Types.TextShort | null;
   a_float_range: Ranges.Types.FloatRange;
+  a_float_range_nullable: Ranges.Types.FloatRange | null;
   a_int4range: Postgres.Types.Int4range;
   a_int8range: Postgres.Types.Int8range;
   a_numrange: Postgres.Types.Numrange;
@@ -389,6 +409,7 @@ export function updateMany({
     newRow.a_int,
     newRow.a_interval.toPostgres(),
     JSON.stringify(newRow.a_json),
+    !!newRow.a_json_nullable ? JSON.stringify(newRow.a_json_nullable) : null,
     JSON.stringify(newRow.a_jsonb),
     newRow.a_line,
     newRow.a_lseg,
@@ -415,8 +436,11 @@ export function updateMany({
     newRow.a_uuid,
     newRow.a_xml,
     newRow.a_enum,
+    newRow.a_enum_nullable,
     newRow.a_text_short,
+    newRow.a_text_short_nullable,
     newRow.a_float_range,
+    newRow.a_float_range_nullable,
     newRow.a_int4range.toPostgres(Postgres.Serializers.range),
     newRow.a_int8range.toPostgres(Postgres.Serializers.range),
     newRow.a_numrange.toPostgres(Postgres.Serializers.range),
@@ -444,6 +468,7 @@ export function updateMany({
       a_int = input.a_int,
       a_interval = input.a_interval,
       a_json = input.a_json,
+      a_json_nullable = input.a_json_nullable,
       a_jsonb = input.a_jsonb,
       a_line = input.a_line,
       a_lseg = input.a_lseg,
@@ -470,8 +495,11 @@ export function updateMany({
       a_uuid = input.a_uuid,
       a_xml = input.a_xml,
       a_enum = input.a_enum,
+      a_enum_nullable = input.a_enum_nullable,
       a_text_short = input.a_text_short,
+      a_text_short_nullable = input.a_text_short_nullable,
       a_float_range = input.a_float_range,
+      a_float_range_nullable = input.a_float_range_nullable,
       a_int4range = input.a_int4range,
       a_int8range = input.a_int8range,
       a_numrange = input.a_numrange,
@@ -496,6 +524,7 @@ export function updateMany({
       "inet",
       "int4",
       "interval",
+      "json",
       "json",
       "jsonb",
       "line",
@@ -523,7 +552,10 @@ export function updateMany({
       "uuid",
       "xml",
       "my_enum",
+      "my_enum",
       "text_short",
+      "text_short",
+      "float_range",
       "float_range",
       "int4range",
       "int8range",
@@ -531,7 +563,7 @@ export function updateMany({
       "tsrange",
       "tstzrange",
       "daterange",
-    ])} AS input(not_called_id, a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum, a_text_short, a_float_range, a_int4range, a_int8range, a_numrange, a_tsrange, a_tstzrange, a_daterange)
+    ])} AS input(not_called_id, a_bigint, a_bigserial, a_bit, a_varbit, a_boolean, a_box, a_bytea, a_char, a_varchar, a_cidr, a_circle, a_date, a_float8, a_inet, a_int, a_interval, a_json, a_json_nullable, a_jsonb, a_line, a_lseg, a_macaddr, a_macaddr8, a_money, a_numeric, a_path, a_pg_lsn, a_pg_snapshot, a_point, a_polygon, a_real, a_smallint, a_smallserial, a_serial, a_text, a_time, a_timetz, a_timestamp, a_timestamptz, a_tsquery, a_tsvector, a_uuid, a_xml, a_enum, a_enum_nullable, a_text_short, a_text_short_nullable, a_float_range, a_float_range_nullable, a_int4range, a_int8range, a_numrange, a_tsrange, a_tstzrange, a_daterange)
     WHERE t.not_called_id = input.not_called_id
     RETURNING ${aliasColumns("t")}`;
 
