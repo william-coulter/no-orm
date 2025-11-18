@@ -1,6 +1,5 @@
 # TODO List:
 
-- Address all `TODO`s / `FIXME`s in the code.
 - Ensure all types from gen functions are exported.
 - Use a linter to enforce import order (and other things).
 - Update README and point to docs.
