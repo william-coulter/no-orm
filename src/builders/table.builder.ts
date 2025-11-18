@@ -5,6 +5,10 @@ import {
   TableIndex,
   TableIndexColumn,
 } from "extract-pg-schema";
+
+import { NonIgnoredConfig as NonIgnoredTableConfig } from "../parsers/table.parser";
+import { isDomainColumn, isEnumColumn } from "./column-types";
+import { getColumnReference, snakeToPascalCase } from "./helpers";
 import {
   columnToSlonikPrimitiveValue,
   columnToTypescriptType,
@@ -15,9 +19,6 @@ import {
   mapPostgresTypeToTypescriptType,
   pgTypeToUnnestType,
 } from "./mappers";
-import { isDomainColumn, isEnumColumn } from "./column-types";
-import { NonIgnoredConfig as NonIgnoredTableConfig } from "../parsers/table.parser";
-import { getColumnReference, snakeToPascalCase } from "./helpers";
 
 type BuildArgs = {
   table: TableDetails;

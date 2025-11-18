@@ -1,7 +1,6 @@
 import { TableColumn } from "extract-pg-schema";
 
 import * as logger from "../logger";
-import { getColumnReference, snakeToPascalCase } from "./helpers";
 import {
   CompositeColumn,
   isBaseColumn,
@@ -11,13 +10,14 @@ import {
   isRangeColumn,
 } from "./column-types";
 import {
-  enumColumnToTypescriptType,
-  enumColumnToZodSchemaName,
-} from "./enums.builder";
-import {
   domainColumnToTypescriptType,
   domainColumnToZodSchemaName,
 } from "./domains.builder";
+import {
+  enumColumnToTypescriptType,
+  enumColumnToZodSchemaName,
+} from "./enums.builder";
+import { getColumnReference, snakeToPascalCase } from "./helpers";
 import {
   rangeColumnToTypescriptType,
   rangeColumnToZodSchemaName,

@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { Ignorable, ignorableSchema } from "./ignorable";
 
 export type ColumnConfig = {

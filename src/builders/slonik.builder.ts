@@ -1,8 +1,6 @@
 import { Files } from "./types";
 
-type BuildArgs = {};
-
-export async function build({}: BuildArgs): Promise<Files> {
+export async function build(): Promise<Files> {
   return {
     "type-parsers.ts": buildTypeParsers(),
   };

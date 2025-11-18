@@ -1,14 +1,15 @@
 import { Schema, TableDetails } from "extract-pg-schema";
-import path from "path";
 import { mkdir, writeFile } from "fs/promises";
+import path from "path";
+
+import * as DomainsBuilder from "../builders/domains.builder";
+import * as EnumsBuilder from "../builders/enums.builder";
+import { snakeToPascalCase } from "../builders/helpers";
+import * as RangesBuilder from "../builders/ranges.builder";
+import * as DefaultConfigs from "../config/default";
+import { ParsedSchemaConfig } from "../config/parser";
 import * as logger from "../logger";
 import * as TableParser from "./table.parser";
-import { ParsedSchemaConfig } from "../config/parser";
-import * as DefaultConfigs from "../config/default";
-import * as EnumsBuilder from "../builders/enums.builder";
-import * as DomainsBuilder from "../builders/domains.builder";
-import * as RangesBuilder from "../builders/ranges.builder";
-import { snakeToPascalCase } from "../builders/helpers";
 
 export async function parse({
   schema,

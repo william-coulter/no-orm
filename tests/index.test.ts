@@ -1,8 +1,8 @@
-import path from "path";
-import fs from "fs/promises";
-import { GenericContainer, StartedTestContainer } from "testcontainers";
-import { Client } from "pg";
 import { execa } from "execa";
+import fs from "fs/promises";
+import path from "path";
+import { Client } from "pg";
+import { GenericContainer, StartedTestContainer } from "testcontainers";
 
 describe("no-orm", () => {
   let container: StartedTestContainer;
@@ -198,6 +198,7 @@ async function safeReadFile(
 ): Promise<string | Buffer<ArrayBufferLike> | null> {
   try {
     return await fs.readFile(...args);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     if (err.code === "ENOENT") {
       return null;

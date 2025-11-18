@@ -19,8 +19,8 @@ program
 program
   .command("init")
   .description("Initialize `no-orm` in your project.")
-  .action(async (options: {}) => {
-    await InitCommand.run(options);
+  .action(async (_options: Record<string, string>) => {
+    await InitCommand.run();
   });
 
 program

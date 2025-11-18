@@ -1,9 +1,10 @@
 import { Schema, TableColumn, TableDetails } from "extract-pg-schema";
-import { DatabaseSchemaConfig, SchemaConfig, TableConfig } from "./schema";
-import * as DefaultConfigs from "./default";
+
 import * as logger from "../logger";
-import { Ignorable } from "./ignorable";
 import { NoOrmConfig } from ".";
+import * as DefaultConfigs from "./default";
+import { Ignorable } from "./ignorable";
+import { DatabaseSchemaConfig, SchemaConfig, TableConfig } from "./schema";
 
 /** An internal representation of the user-supplied `no-orm config` that is useful for `no-orm` to consume. */
 export type ParsedConfig = {

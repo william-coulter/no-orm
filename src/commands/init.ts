@@ -1,12 +1,11 @@
 import chalk from "chalk";
-import inquirer from "inquirer";
-
 import { writeFile } from "fs/promises";
+import inquirer from "inquirer";
 
 import * as logger from "../logger";
 import { withLoadingSpinner } from "./helpers/with-loading-spinner";
 
-export async function run({}: RunArgs): Promise<void> {
+export async function run(): Promise<void> {
   try {
     console.log(chalk.bgBlue.white("Welcome to no-orm!"));
     console.log();
@@ -44,8 +43,6 @@ export async function run({}: RunArgs): Promise<void> {
     process.exit(1);
   }
 }
-
-type RunArgs = {};
 
 async function buildEmptyConfig(path: string): Promise<void> {
   const emptyConfig = `import type { NoOrmConfig } from "no-orm";

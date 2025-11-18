@@ -19,7 +19,7 @@ export async function withLoadingSpinner({
 }
 
 type Args = {
-  action: () => Promise<any>;
+  action: () => Promise<unknown>;
   spinnerText?: string;
   successMessage?: string;
   failureMessage?: string;

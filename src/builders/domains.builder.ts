@@ -1,7 +1,8 @@
 import { DomainDetails, Schema } from "extract-pg-schema";
-import { snakeToPascalCase, snakeToCamelCase } from "./helpers";
-import { mapPostgresTypeToZodSchema } from "./mappers";
+
 import { DomainColumn } from "./column-types";
+import { snakeToCamelCase,snakeToPascalCase } from "./helpers";
+import { mapPostgresTypeToZodSchema } from "./mappers";
 import { Files } from "./types";
 
 type BuildArgs = {

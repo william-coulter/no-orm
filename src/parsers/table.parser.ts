@@ -1,8 +1,9 @@
 import { TableDetails } from "extract-pg-schema";
+import { writeFile } from "fs/promises";
 import path from "path";
-import { mkdir, writeFile } from "fs/promises";
-import { ParsedTableConfig } from "../config/parser";
+
 import * as TableBuilder from "../builders/table.builder";
+import { ParsedTableConfig } from "../config/parser";
 
 export async function parse({
   table,

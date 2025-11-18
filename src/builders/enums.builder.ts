@@ -1,6 +1,7 @@
 import { EnumDetails, Schema } from "extract-pg-schema";
-import { snakeToCamelCase, snakeToPascalCase } from "./helpers";
+
 import { EnumColumn } from "./column-types";
+import { snakeToCamelCase, snakeToPascalCase } from "./helpers";
 import { Files } from "./types";
 
 type BuildArgs = {

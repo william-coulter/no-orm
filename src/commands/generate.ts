@@ -1,15 +1,15 @@
+import type { Schema } from "extract-pg-schema";
+import { mkdir, rename, rm, writeFile } from "fs/promises";
 import path from "path";
-import { mkdir, writeFile, rm, rename } from "fs/promises";
-import { format, resolveConfig, type Options } from "prettier";
+import { format, type Options, resolveConfig } from "prettier";
 
-import * as logger from "../logger";
+import * as SlonikBuilder from "../builders/slonik.builder";
 import { noOrmConfigSchema } from "../config";
-import * as PostgresParser from "../parsers/postgres.parser";
-import * as SchemaParser from "../parsers/schema.parser";
 import * as DefaultConfigs from "../config/default";
 import * as ConfigParser from "../config/parser";
-import * as SlonikBuilder from "../builders/slonik.builder";
-import type { Schema } from "extract-pg-schema";
+import * as logger from "../logger";
+import * as PostgresParser from "../parsers/postgres.parser";
+import * as SchemaParser from "../parsers/schema.parser";
 import { withLoadingSpinner } from "./helpers/with-loading-spinner";
 
 const extractSchemaMod = await import("extract-pg-schema");
@@ -94,7 +94,7 @@ async function generate({
   await mkdir(slonikOutputDirectory, {
     recursive: true,
   });
-  const slonikFiles = await SlonikBuilder.build({});
+  const slonikFiles = await SlonikBuilder.build();
   for (const [fileName, content] of Object.entries(slonikFiles)) {
     const formattedContent = await code_formatter(content);
     await writeFile(
@@ -137,6 +137,7 @@ export function buildFormatter(
   return async (code) => format(code, { parser: "typescript", config });
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function importConfig(path: string): Promise<any> {
   try {
     return await import(path);
