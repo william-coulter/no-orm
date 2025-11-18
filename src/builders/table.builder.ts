@@ -535,7 +535,7 @@ function buildIndexFunctions({
       // For now, let's ignore any indexes with a functional column component (e.g LOWER(col)).
       .filter((index) => index.columns.every((col) => !!col.name))
       // For now, let's ignore any indexes with a predicate (e.g WHERE col IS NOT NULL).
-      // TODO: `enums` and `domains` are probably ok... But what about `range` and `composite`?
+      // IDEA: What happens if this column is a complex type? (`enum`, `domain` etc)...
       .filter((index) => index.columns.every((col) => !col.predicate))
       .map((index) => {
         const indexWithColumns: IndexWithColumns = {
@@ -637,7 +637,7 @@ function buildSingleColumnIndexFunction({
   const reference = getColumnReference(column);
   const getManyMapFunctionName = `${getManyFunctionName}Map`;
   const getManyMapArgsName = `${getManyArgsName}`;
-  // TODO: One day we can conditional return `Row | null` if the index is unique.
+  // IDEA: One day we can conditional return `Row | null` if the index is unique.
   const getManyMapFunctionValueType = `Row[]`;
   const mapType = `Map<${columnTypescriptType}, ${getManyMapFunctionValueType}>`;
   const getManyMapFunction = reference
