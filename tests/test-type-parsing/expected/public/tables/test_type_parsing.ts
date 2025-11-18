@@ -570,7 +570,7 @@ export function updateMany({
   return connection.any(query);
 }
 
-type UpdateArgs = BaseArgs & { newRow: Update };
+export type UpdateArgs = BaseArgs & { newRow: Update };
 
 export async function update({ connection, newRow }: UpdateArgs): Promise<Row> {
   const result = await updateMany({ connection, newRows: [newRow] });
@@ -590,7 +590,7 @@ export async function deleteMany({
   await connection.query(query);
 }
 
-type DeleteArgs = BaseArgs & { id: Id };
+export type DeleteArgs = BaseArgs & { id: Id };
 
 async function _delete({ connection, id }: DeleteArgs): Promise<void> {
   await deleteMany({ connection, ids: [id] });

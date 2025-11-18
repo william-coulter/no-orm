@@ -466,7 +466,7 @@ function buildUpdateManyFunction({
 
 /** Builds the `UpdateArgs` type. */
 function buildUpdateArgsType(): string {
-  return `type UpdateArgs = BaseArgs & { newRow: Update };`;
+  return `export type UpdateArgs = BaseArgs & { newRow: Update };`;
 }
 
 /** Builds the `update` function. */
@@ -504,7 +504,7 @@ function buildDeleteManyFunction({
 
 /** Builds the `DeleteArgs` type. */
 function buildDeleteArgsType(): string {
-  return `type DeleteArgs = BaseArgs & { id: Id };`;
+  return `export type DeleteArgs = BaseArgs & { id: Id };`;
 }
 
 /** Builds the `delete` function and its alias export. */
