@@ -1,44 +1,37 @@
 import type { Schema } from "extract-pg-schema";
 import { mkdir, rename, rm, writeFile } from "fs/promises";
+import { createSpinner, Spinner } from "nanospinner";
 import path from "path";
 import { format, type Options, resolveConfig } from "prettier";
 
 import * as SlonikBuilder from "../builders/slonik.builder";
-import { noOrmConfigSchema } from "../config";
+import { NoOrmConfig, noOrmConfigSchema } from "../config";
 import * as DefaultConfigs from "../config/default";
 import * as ConfigParser from "../config/parser";
 import * as logger from "../logger";
 import * as PostgresParser from "../parsers/postgres.parser";
 import * as SchemaParser from "../parsers/schema.parser";
-import { withLoadingSpinner } from "./helpers/with-loading-spinner";
 
 const extractSchemaMod = await import("extract-pg-schema");
 const extractSchemasModule =
   extractSchemaMod.extractSchemas ?? extractSchemaMod.default?.extractSchemas;
 
-export async function run(args: RunArgs): Promise<void> {
-  await withLoadingSpinner({
-    action: () => doRun(args),
-  });
-}
+export async function run({ configPath }: RunArgs): Promise<void> {
+  const spinner = createSpinner("Generating no-orm output...");
+  spinner.start();
 
-type RunArgs = {
-  configPath: string;
-};
-
-async function doRun({ configPath }: RunArgs): Promise<void> {
   const fullPathToConfig = path.isAbsolute(configPath)
     ? configPath
     : path.join(process.cwd(), configPath);
 
-  const configModule = await importConfig(fullPathToConfig);
+  const configModule = await importConfig(fullPathToConfig, spinner);
   const config = noOrmConfigSchema.parse(configModule.default ?? configModule);
   const postgresConnectionString =
     ConfigParser.parsePostgresConnectionString(config);
 
-  const schemas = await extractSchemas(postgresConnectionString);
+  const schemas = await extractSchemas(postgresConnectionString, spinner);
 
-  const parsedConfig = ConfigParser.parse(config, schemas);
+  const parsedConfig = safeParseConfig(config, schemas, spinner);
 
   // IDEA: This can be a config argument.
   const prettierConfig = await resolveConfig(".prettierrc");
@@ -69,14 +62,21 @@ async function doRun({ configPath }: RunArgs): Promise<void> {
       recursive: true,
     });
     await rename(tempOutputDirectoryPath, parsedConfig.output_directory);
+    spinner.success(
+      `Generated no-orm output at: '${parsedConfig.output_directory}'`,
+    );
   } catch (err) {
-    console.error("Error:", err);
+    spinner.error(`Error: ${err}`);
     await rm(tempOutputDirectoryPath, {
       recursive: true,
     });
     process.exit(1);
   }
 }
+
+type RunArgs = {
+  configPath: string;
+};
 
 /** Does the thing that `no-orm` advertises on the box. */
 async function generate({
@@ -138,11 +138,11 @@ export function buildFormatter(
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function importConfig(path: string): Promise<any> {
+async function importConfig(path: string, spinner: Spinner): Promise<any> {
   try {
     return await import(path);
   } catch (e) {
-    logger.error(`Could not import config file ${path}.`);
+    spinner.error(`Could not import config file ${path}.`);
     if (e instanceof Error) {
       logger.error(e.message);
     }
@@ -152,15 +152,32 @@ async function importConfig(path: string): Promise<any> {
 
 async function extractSchemas(
   postgresConnectionString: string,
+  spinner: Spinner,
 ): Promise<Record<string, Schema>> {
   try {
     return await extractSchemasModule({
       connectionString: postgresConnectionString,
     });
   } catch (e) {
-    logger.error(
+    spinner.error(
       `Could not extract schemas from DB ${postgresConnectionString}`,
     );
+    if (e instanceof Error) {
+      logger.error(e.message);
+    }
+    process.exit(1);
+  }
+}
+
+function safeParseConfig(
+  config: NoOrmConfig,
+  schemas: Record<string, Schema>,
+  spinner: Spinner,
+): ConfigParser.ParsedConfig {
+  try {
+    return ConfigParser.parse(config, schemas);
+  } catch (e) {
+    spinner.error(`Could not parse no-orm config.`);
     if (e instanceof Error) {
       logger.error(e.message);
     }
