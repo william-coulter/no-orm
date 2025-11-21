@@ -2,6 +2,7 @@ import { Schema, TableDetails } from "extract-pg-schema";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 
+import { isCompositeColumn } from "../builders/column-types";
 import * as DomainsBuilder from "../builders/domains.builder";
 import * as EnumsBuilder from "../builders/enums.builder";
 import { snakeToPascalCase } from "../builders/helpers";
@@ -45,6 +46,14 @@ export async function parse({
   });
 
   for (const table of Object.values(schema.tables)) {
+    // A little gross. I want test coverage on when `no-orm` raises an
+    // error and I've written such a bullet-proof tool that I can't think
+    // of how else to raise one!
+    const ERROR_COLUMN = "please_oh_god_throw_an_error";
+    if (table.columns.map((col) => col.name).includes(ERROR_COLUMN)) {
+      throw new ErrorForTestCoverage();
+    }
+
     const tableConfig =
       config.table_configs.get(table.name) ??
       DefaultConfigs.buildParsedTableConfig(true);
@@ -54,8 +63,25 @@ export async function parse({
       continue;
     }
 
+    const primaryKey = table.columns.find((col) => col.isPrimaryKey);
+    if (!primaryKey) {
+      logger.warn(
+        `Table ${schema.name}.${table.name} does not have a primary key. Why would you do that? Skipping...`,
+      );
+      continue;
+    }
+
+    const hasCompositeColumn = table.columns.some(isCompositeColumn);
+    if (hasCompositeColumn) {
+      logger.warn(
+        `Table ${schema.name}.${table.name} has a composite column. no-orm does not support this yet. Skipping...`,
+      );
+      continue;
+    }
+
     await TableParser.parse({
       table: table,
+      primary_key: primaryKey,
       config: tableConfig,
       output_path: path.join(schemaOutputPath, "tables"),
       code_formatter: code_formatter,
@@ -213,3 +239,5 @@ async function buildIndex({
   const formattedContent = await code_formatter(content);
   await writeFile(output_path, formattedContent, "utf-8");
 }
+
+class ErrorForTestCoverage extends Error {}

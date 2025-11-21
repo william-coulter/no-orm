@@ -1,4 +1,4 @@
-import { TableDetails } from "extract-pg-schema";
+import { TableColumn, TableDetails } from "extract-pg-schema";
 import { writeFile } from "fs/promises";
 import path from "path";
 
@@ -7,12 +7,14 @@ import { ParsedTableConfig } from "../config/parser";
 
 export async function parse({
   table,
+  primary_key,
   output_path,
   config,
   code_formatter,
 }: ParseArgs): Promise<void> {
   const tableFileContent = await TableBuilder.build({
     table,
+    primary_key,
     config,
   });
 
@@ -27,6 +29,7 @@ export async function parse({
 
 type ParseArgs = {
   table: TableDetails;
+  primary_key: TableColumn;
   output_path: string;
   config: NonIgnoredConfig;
   code_formatter: (raw: string) => Promise<string>;

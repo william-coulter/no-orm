@@ -46,6 +46,7 @@ export function columnToZodType(column: TableColumn): string {
   } else if (isRangeColumn(column)) {
     return `${rangeColumnToZodSchemaName(column)}${nullableText}`;
   } else if (isCompositeColumn(column)) {
+    // Should be an unreachable branch as tables with a composite column are ignored.
     throw new UnsupportedCompositeType(column);
   }
 
@@ -75,6 +76,7 @@ export function columnToTypescriptType(column: TableColumn): string {
   } else if (isRangeColumn(column)) {
     return `${rangeColumnToTypescriptType(column)}${nullableText}`;
   } else if (isCompositeColumn(column)) {
+    // Should be an unreachable branch as tables with a composite column are ignored.
     throw new UnsupportedCompositeType(column);
   }
 
@@ -134,6 +136,7 @@ export function pgTypeToUnnestType(column: TableColumn): string {
   } else if (isRangeColumn(column)) {
     return column.informationSchemaValue.udt_name;
   } else if (isCompositeColumn(column)) {
+    // Should be an unreachable branch as tables with a composite column are ignored.
     throw new UnsupportedCompositeType(column);
   }
 

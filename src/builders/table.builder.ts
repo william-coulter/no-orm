@@ -22,10 +22,15 @@ import {
 
 type BuildArgs = {
   table: TableDetails;
+  primary_key: TableColumn;
   config: NonIgnoredTableConfig;
 };
 
-export async function build({ table, config }: BuildArgs): Promise<string> {
+export async function build({
+  table,
+  primary_key,
+  config,
+}: BuildArgs): Promise<string> {
   const nonIgnoredColumns = table.columns.filter(
     (col) => !config.ignored_columns.has(col.name),
   );
@@ -48,7 +53,7 @@ export async function build({ table, config }: BuildArgs): Promise<string> {
     config,
   });
 
-  const primaryKey = getPrimaryKey(table);
+  const primaryKey = primary_key;
 
   return `${buildImports({ columns: nonIgnoredColumns })}
 
@@ -765,18 +770,4 @@ ${getManyFunction}
 ${getArgs}
 
 ${getFunction}`.trim();
-}
-
-function getPrimaryKey(table: TableDetails): TableColumn {
-  const primaryKey = table.columns.find((col) => col.isPrimaryKey);
-  if (!primaryKey) {
-    throw new NoPrimaryKeyError(table);
-  }
-  return primaryKey;
-}
-
-class NoPrimaryKeyError extends Error {
-  constructor(table: TableDetails) {
-    super(`Table ${table.name} has no primary key`);
-  }
 }
