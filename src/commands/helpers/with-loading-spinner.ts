@@ -15,6 +15,7 @@ export async function withLoadingSpinner({
     spinner.success(successMessage);
   } catch (e) {
     spinner.error(failureMessage ? `${failureMessage}: ${e}` : undefined);
+    process.exit(1);
   }
 }
 
