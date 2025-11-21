@@ -59,6 +59,19 @@ export const schemaConfigSchema = ignorableSchema(
   }),
 );
 
+// IDEA:
+// Would I consumer like this more?
+// schema_configs: [
+//   {
+//     name: "public",
+//     table_configs: [
+//       {
+//         name: "penguins",
+//         column_configs: [{ name: "favourite_snack", ignore: true }],
+//       },
+//     ],
+//   },
+// ];
 export type DatabaseSchemaConfig = {
   /**
    * A map of schema names the schema's config.
