@@ -156,9 +156,9 @@ export function parseForTable(
       }
 
       if (columnConfig.ignore === true || columnConfig.readonly === true) {
-        const hasDefault = column.defaultValue !== null;
         const isNullable = column.isNullable;
-        if (isNullable && !hasDefault) {
+        const hasDefault = column.defaultValue !== null;
+        if (!isNullable && !hasDefault) {
           throw new InvalidIgnoredColumn(column);
         }
       }
