@@ -1,9 +1,9 @@
 import chalk from "chalk";
 import { writeFile } from "fs/promises";
 import inquirer from "inquirer";
+import { createSpinner } from "nanospinner";
 
 import * as logger from "../logger";
-import { withLoadingSpinner } from "./helpers/with-loading-spinner";
 
 export async function run(): Promise<void> {
   try {
@@ -21,12 +21,16 @@ export async function run(): Promise<void> {
 
     const { configPath } = answers;
 
-    await withLoadingSpinner({
-      action: () => buildEmptyConfig(configPath),
-      spinnerText: `Building config at ${configPath}`,
-      failureMessage: `Cannot build config at ${configPath}`,
-      successMessage: `Built config at ${configPath}`,
-    });
+    const spinner = createSpinner(`Building config at ${configPath}`);
+
+    try {
+      spinner.start();
+      await buildEmptyConfig(configPath);
+      spinner.success(`Built config at ${configPath}`);
+    } catch (e) {
+      spinner.error(`Cannot build config at ${configPath}: ${e}`);
+      process.exit(1);
+    }
 
     console.log();
     console.log(`To get started, run:`);
