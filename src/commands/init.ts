@@ -33,9 +33,8 @@ export async function run(): Promise<void> {
     }
 
     console.log();
-    console.log(`To get started, run:`);
     console.log(
-      chalk.bgBlue.white(`no-orm generate --config-path ${configPath}`),
+      `To get started, run: ${chalk.bgBlue.white(`npx no-orm generate --config-path ${configPath}`)}`,
     );
 
     const terminalWidth = process.stdout.columns;
