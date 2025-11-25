@@ -6,6 +6,21 @@ This is the source code for the [no-orm](https://www.no-orm.com/) project.
 
 # How to read this repository
 
+## Entrypoint
+
+The `src/index.ts` file is the entry-point for the `no-orm` package.
+
+This defines a [commander](https://github.com/tj/commander.js?tab=readme-ov-file#quick-start) program for `no-orm`.
+
+## Other key files
+
+<!-- STARTHERE: Do you like this? -->
+
+- `src/commands`: Program commands are defined in this directory. The main command for `no-orm` is `generate`, which actually generates the code from a database.
+- `src/parsers`: Parsers parse a Postgres entity (schema, table etc) and manage building the code according to the user's database and `no-orm` config.
+- `src/builders`: Builders actually build the code and simply return strings.
+- `src/config`: Handles parsing the `no-orm.config.ts` file that a user can supply such that it can be used by this tool.
+
 # Want to contribute?
 
 ## Submit a pull request
