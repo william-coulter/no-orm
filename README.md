@@ -10,17 +10,23 @@ This is the source code for the [no-orm](https://www.no-orm.com/) project.
 
 ## Submit a pull request
 
-There is no template.
+There is no template. Pour your heart into the PR description. Please include the reason for your pull request and change.
+
+You should test all of your changes before submitting the PR. Even better if you write a test if you're introducing new behaviour.
 
 ## Testing
 
 The tests in this project are mainly used to guard-rail against regressions. This project favours capturing core behaviour well rather than testing every edge-case.
 
-You should test all of your changes before submitting the PR. Even better if you write a test if you're introducing new behaviour.
+### How they work
 
 The tests basically execute `no-orm` against various schemas and asserts that the expected files are generated. You can see the test examples being set up in the `tests/test-*` directories.
 
+### How to run them locally
+
 You can run these locally with `npm run test` which is a wrapper around [vitest](https://vitest.dev/). Use `npm run test -- tests/index.test.ts -t 'Test foreign key references'` to test a particular file and test.
+
+### Automated tests?
 
 One day these tests will run as an automated check against every pull request.
 
