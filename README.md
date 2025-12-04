@@ -56,7 +56,14 @@ This will copy all of the test outputs and make them the new expected outputs.
 
 ## Version control
 
-TODO: Changesets.
+No ORM uses [changesets](https://github.com/changesets/changesets/tree/main?tab=readme-ov-file) for version control and publishing new versions.
+
+The general workflow is:
+
+1. Make a code change to this repository.
+2. Annotate your change with `npx @changesets/cli`.
+
+When we want to publish a release, we run `npx @changesets/cli version` and submit in its won PR.
 
 # Fast follows
 
