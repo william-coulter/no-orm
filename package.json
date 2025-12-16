@@ -1,5 +1,5 @@
 {
-  "name": "no-orm",
+  "name": "no-orm-cli",
   "version": "1.0.0",
   "description": "Generate type-safe Slonik / Zod interfaces and access patterns from your PostgreSQL schema.",
   "type": "module",
