@@ -4,6 +4,10 @@
 
 This is the source code for the [no-orm](https://www.no-orm.com/) project.
 
+# Documentation
+
+Documentation: https://no-orm.com
+
 # How to read this repository
 
 ## Entrypoint
@@ -62,6 +66,10 @@ The general workflow is:
 2. Annotate your change with `npx @changesets/cli`.
 
 When we want to publish a release, we run `npx @changesets/cli version` and submit in its own PR.
+
+# Publishing
+
+Right now this is done locally... This should be automated somehow.
 
 # Fast follows
 
