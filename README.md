@@ -14,8 +14,6 @@ This defines a [commander](https://github.com/tj/commander.js?tab=readme-ov-file
 
 ## Other key files
 
-<!-- STARTHERE: Do you like this? -->
-
 - `src/commands`: Program commands are defined in this directory. The main command for `no-orm` is `generate`, which actually generates the code from a database.
 - `src/parsers`: Parsers parse a Postgres entity (schema, table etc) and manage building the code according to the user's database and `no-orm` config.
 - `src/builders`: Builders actually build the code and simply return strings.
