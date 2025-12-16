@@ -61,7 +61,7 @@ The general workflow is:
 1. Make a code change to this repository.
 2. Annotate your change with `npx @changesets/cli`.
 
-When we want to publish a release, we run `npx @changesets/cli version` and submit in its won PR.
+When we want to publish a release, we run `npx @changesets/cli version` and submit in its own PR.
 
 # Fast follows
 
