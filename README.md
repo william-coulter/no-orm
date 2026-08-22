@@ -71,6 +71,30 @@ When we want to publish a release, we run `npx @changesets/cli version` and subm
 
 Right now this is done locally... This should be automated somehow.
 
+# Bug fixes
+
+Known issues that are worth picking up. Each one should get a test that fails before the fix.
+
+## `readonly_time_columns` is silently ignored
+
+**Problem**: `TableConfig.readonly_time_columns` is documented on the type in `src/config/schema.ts` but is missing from the matching `tableConfigSchema` Zod object. Zod strips unknown keys, so the value never survives `noOrmConfigSchema.parse()` in `src/commands/generate.ts`. By the time `parseForTable` reads `config.readonly_time_columns ?? true` it is always `undefined`, which means `created_at` and `updated_at` are treated as readonly no matter what the user sets.
+
+You can reproduce it by parsing a config that sets the field and printing the result — the key is gone.
+
+**Solution**: Add `readonly_time_columns: z.boolean().optional()` to `tableConfigSchema`. Then add a test case that sets it to `false` and asserts the generated `Create` and `Update` types include the time columns.
+
+## The drift catcher doesn't catch nested drift
+
+**Problem**: The bug above should have been a compile error. `src/config/drift-catcher.ts` guards the hand-written config types against their Zod schemas with `TypeEqualityGuard<A, B> = Exclude<A, B> | Exclude<B, A>`, but `Exclude` only distributes over unions. For two object types it collapses to `never` regardless of whether their properties agree, so any divergence below the top level of `NoOrmConfig` passes silently.
+
+**Solution**: Replace `TypeEqualityGuard` with a structural equality check (the usual trick is a pair of conditional types comparing `<T>() => T extends A ? 1 : 2` against `<T>() => T extends B ? 1 : 2`), applied recursively. Assert it for `SchemaConfig`, `TableConfig` and `ColumnConfig` as well, not just `NoOrmConfig`.
+
+## `commander` is an undeclared dependency
+
+**Problem**: `src/index.ts` imports `commander` but it is not listed in `dependencies` — it only resolves locally because it is hoisted from a transitive dependency. This currently works in the published package by accident: `tsup` externalises declared dependencies and peer dependencies only, so `commander` gets bundled into `dist` instead.
+
+**Solution**: Add `commander` to `dependencies` at the version we actually use. Be aware this flips it from bundled to external, which changes what ships in `dist` — verify the built CLI still runs from a clean install afterwards.
+
 # Fast follows
 
 Some further features ideas are littered in the codebase as a comment with the `IDEA:` prefix.
