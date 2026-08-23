@@ -95,6 +95,24 @@ You can reproduce it by parsing a config that sets the field and printing the re
 
 **Solution**: Add `commander` to `dependencies` at the version we actually use. Be aware this flips it from bundled to external, which changes what ships in `dist` — verify the built CLI still runs from a clean install afterwards.
 
+## Peer dependency ranges lag the versions consumers actually need
+
+**Problem**: `package.json` peers `slonik@^46.4.0` and `zod@^3.25.51`. A consumer on `slonik@49` (the current major) has to override the peer check entirely via `peerDependencyRules` in their own workspace config, because the declared range never got bumped past 46 despite there being no known incompatibility with 49.
+
+**Solution**: Verify against `slonik@49` and bump the peer range (the `zod` bump is blocked separately — see the next two entries). Once fixed, downstream `peerDependencyRules` overrides for `slonik` can be removed.
+
+## Unqualified domain names in generated `unnest` casts break every write on a cross-schema domain
+
+**Problem**: `pgTypeToUnnestType` in `src/builders/mappers.ts` returns `column.informationSchemaValue.domain_name!` — a bare name, no schema qualifier — for any domain-typed column. `createMany`/`updateMany` in `src/builders/table.builder.ts` interpolate that straight into `sql.unnest(tuples, ["<name>[]", ...])`. Postgres resolves the bare name against `search_path`, so the cast only works when the domain's schema happens to be on the path. Domain resolution elsewhere in the generator (`domainColumnToZodSchemaName`/`domainColumnToTypescriptType` in `src/builders/domains.builder.ts`) is equally unqualified, which pushes consumers toward one schema per project with its own domains — exactly the setup that isn't on a shared connection's `search_path`. The result: `ERROR: type "<domain>[]" does not exist` on every write to a table with a domain column, the first time a project adds one. Reads are unaffected since they don't cast.
+
+**Solution**: Fully qualify the cast with the domain's actual schema, e.g. `` `${column.informationSchemaValue.domain_schema}.${column.informationSchemaValue.domain_name}` ``, and generate proper cross-schema references for the TS side too instead of assuming the domain lives alongside the table. Add a test with two schemas that each define their own domain, asserting a generated `createMany` against either still round-trips.
+
+## JSON schema codegen doesn't compile under zod 4
+
+**Problem**: `buildSchemas` in `src/builders/postgres.builder.ts` generates `export const json: z.ZodType<Types.Json> = z.lazy(() => z.union([..., z.record(json)]))`. Zod 4's `z.record` requires both a key and value schema, and rejects the explicit `z.ZodType<T>` annotation on a `z.lazy` result the way zod 3 allowed it. Any project on zod 4 fails to compile the always-generated `schemas.ts` — which is why the `zod` peer stays pinned to `^3`, not by choice.
+
+**Solution**: Generate zod 4's two-argument `z.record(z.string(), json)` and drop the `ZodType` annotation (zod 4 also ships a native `z.json()` that could replace the hand-rolled union outright), then bump the peer range.
+
 # Fast follows
 
 Some further features ideas are littered in the codebase as a comment with the `IDEA:` prefix.
