@@ -11,21 +11,21 @@ export type NoOrmConfig = {
    *
    * Default: `postgres://postgres:postgres@localhost:5432/postgres`.
    */
-  readonly postgres_connection_string?: string;
+  postgres_connection_string?: string;
 
   /**
    * The directory where `no-orm` will save its generated outputs.
    *
    * Default: `no-orm`.
    */
-  readonly output_directory?: string;
+  output_directory?: string;
 
   /**
    * Define custom behaviour for how `no-orm` reads your database schema.
    *
    * Default: The `no-orm` default options will be applied to every schema.
    */
-  readonly database_schema_config?: DatabaseSchemaConfig;
+  database_schema_config?: DatabaseSchemaConfig;
 };
 
 /** The parser for `no-orm` config. */

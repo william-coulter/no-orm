@@ -108,10 +108,12 @@ it mirrors Postgres identifiers.
 
 **`src/config/index.ts` and `src/config/schema.ts` each define things twice**: a hand-written TS
 type (which carries the doc comments users see in their editor) and a matching Zod schema (which
-does the runtime validation). `src/config/drift-catcher.ts` asserts at compile time that the
-top-level `NoOrmConfig` and `noOrmConfigSchema` agree. Its `TypeEqualityGuard` only distributes over
-unions, so it does **not** catch divergence in nested objects — when you add a field to any config
-type, add it to the corresponding Zod schema by hand, or Zod will silently strip it at parse time.
+does the runtime validation). `src/config/drift-catcher.ts` asserts at compile time that
+`NoOrmConfig`, `DatabaseSchemaConfig`, `SchemaConfig`, `TableConfig`, and `ColumnConfig` each agree
+with their matching Zod schema. Its `TypeEqualityGuard` is a mutual-extends structural equality
+check (`<T>() => T extends A ? 1 : 2` compared both directions), so it *does* catch divergence in
+nested objects — when you add a field to any config type, add it to the corresponding Zod schema by
+hand, or `npx tsc --noEmit` will fail.
 
 `Ignorable<T>` (`config/ignorable.ts`) is the shared shape for schema/table config: either
 `{ ignore: true }` or the real config. Parsers narrow it with the `NonIgnoredConfig` `Extract<>`
