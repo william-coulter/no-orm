@@ -43,6 +43,7 @@ export type TableConfig = Ignorable<{
 export const tableConfigSchema = ignorableSchema(
   z.object({
     column_configs: z.record(z.string(), columnConfigSchema),
+    readonly_time_columns: z.boolean().optional(),
   }),
 );
 

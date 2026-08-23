@@ -40,6 +40,8 @@ export type Create = {
   waddle_speed_kph: number;
   favourite_snack: string | null;
   date_of_birth: Date;
+  created_at: Date;
+  updated_at: Date;
 };
 
 export type CreateManyArgs = BaseArgs & { shapes: Create[] };
@@ -54,6 +56,8 @@ export async function createMany({
     shape.waddle_speed_kph,
     shape.favourite_snack,
     shape.date_of_birth.toISOString(),
+    shape.created_at.toISOString(),
+    shape.updated_at.toISOString(),
   ]);
 
   const query = sql.type(row)`
@@ -62,11 +66,13 @@ export async function createMany({
       species,
       waddle_speed_kph,
       favourite_snack,
-      date_of_birth
+      date_of_birth,
+      created_at,
+      updated_at
     )
-    SELECT name, species, waddle_speed_kph, favourite_snack, date_of_birth
-    FROM ${sql.unnest(tuples, ["text", "text", "numeric", "text", "timestamptz"])}
-      AS input(name, species, waddle_speed_kph, favourite_snack, date_of_birth)
+    SELECT name, species, waddle_speed_kph, favourite_snack, date_of_birth, created_at, updated_at
+    FROM ${sql.unnest(tuples, ["text", "text", "numeric", "text", "timestamptz", "timestamptz", "timestamptz"])}
+      AS input(name, species, waddle_speed_kph, favourite_snack, date_of_birth, created_at, updated_at)
     RETURNING ${columnsFragment}`;
 
   return connection.any(query);
@@ -130,6 +136,8 @@ export type Update = {
   waddle_speed_kph: number;
   favourite_snack: string | null;
   date_of_birth: Date;
+  created_at: Date;
+  updated_at: Date;
 } & { id: Id };
 
 export type UpdateManyArgs = BaseArgs & { newRows: Update[] };
@@ -145,6 +153,8 @@ export function updateMany({
     newRow.waddle_speed_kph,
     newRow.favourite_snack,
     newRow.date_of_birth.toISOString(),
+    newRow.created_at.toISOString(),
+    newRow.updated_at.toISOString(),
   ]);
 
   const query = sql.type(row)`
@@ -153,7 +163,9 @@ export function updateMany({
       species = input.species,
       waddle_speed_kph = input.waddle_speed_kph,
       favourite_snack = input.favourite_snack,
-      date_of_birth = input.date_of_birth
+      date_of_birth = input.date_of_birth,
+      created_at = input.created_at,
+      updated_at = input.updated_at
     FROM ${sql.unnest(tuples, [
       "int4",
       "text",
@@ -161,7 +173,9 @@ export function updateMany({
       "numeric",
       "text",
       "timestamptz",
-    ])} AS input(id, name, species, waddle_speed_kph, favourite_snack, date_of_birth)
+      "timestamptz",
+      "timestamptz",
+    ])} AS input(id, name, species, waddle_speed_kph, favourite_snack, date_of_birth, created_at, updated_at)
     WHERE t.id = input.id
     RETURNING ${aliasColumns("t")}`;
 

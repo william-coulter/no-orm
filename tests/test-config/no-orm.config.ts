@@ -16,6 +16,7 @@ const config: NoOrmConfig = {
             column_configs: {
               ignore_column: { ignore: true },
             },
+            readonly_time_columns: false,
           },
           ignore_table: { ignore: true },
         },
