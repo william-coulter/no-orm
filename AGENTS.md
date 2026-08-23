@@ -152,8 +152,6 @@ There is no CI yet; run the suite locally before opening a PR.
 - Modules are consumed namespace-style: `import * as TableBuilder from "../builders/table.builder"`.
 - `eslint-plugin-simple-import-sort` enforces import/export ordering — an unsorted import is an error.
 - Use `src/logger.ts` (chalk-wrapped `info`/`warn`/`error`/`debug`) rather than bare `console`.
-- `commander` is imported by `src/index.ts` but is **not** in `dependencies`, so tsup bundles it into
-  `dist`. Adding it to `dependencies` would flip it to external — deliberate change, not a cleanup.
 - `zod` and `slonik` are peer dependencies: they belong to the consuming project, and generated code
   imports them from there.
 - `IDEA:` comments mark deliberate future work; the README lists larger planned features.

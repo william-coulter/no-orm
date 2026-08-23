@@ -49,6 +49,7 @@
   ],
   "dependencies": {
     "chalk": "^5.4.1",
+    "commander": "^10.0.1",
     "extract-pg-schema": "^5.7.1",
     "inquirer": "^12.9.6",
     "nanospinner": "^1.2.2",

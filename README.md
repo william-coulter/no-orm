@@ -75,12 +75,6 @@ Right now this is done locally... This should be automated somehow.
 
 Known issues that are worth picking up. Each one should get a test that fails before the fix.
 
-## `commander` is an undeclared dependency
-
-**Problem**: `src/index.ts` imports `commander` but it is not listed in `dependencies` — it only resolves locally because it is hoisted from a transitive dependency. This currently works in the published package by accident: `tsup` externalises declared dependencies and peer dependencies only, so `commander` gets bundled into `dist` instead.
-
-**Solution**: Add `commander` to `dependencies` at the version we actually use. Be aware this flips it from bundled to external, which changes what ships in `dist` — verify the built CLI still runs from a clean install afterwards.
-
 ## Peer dependency ranges lag the versions consumers actually need
 
 **Problem**: `package.json` peers `slonik@^46.4.0` and `zod@^3.25.51`. A consumer on `slonik@49` (the current major) has to override the peer check entirely via `peerDependencyRules` in their own workspace config, because the declared range never got bumped past 46 despite there being no known incompatibility with 49.
