@@ -1,4 +1,4 @@
-# no-orm
+# no-orm-cli
 
 ## 1.0.0
 
