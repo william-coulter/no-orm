@@ -8,6 +8,10 @@ import {
 
 import { NonIgnoredConfig as NonIgnoredTableConfig } from "../parsers/table.parser";
 import { isDomainColumn, isEnumColumn } from "./column-types";
+import {
+  domainColumnToImportAlias,
+  domainColumnToImportPath,
+} from "./domains.builder";
 import { getColumnReference, snakeToPascalCase } from "./helpers";
 import {
   columnToSlonikPrimitiveValue,
@@ -17,7 +21,8 @@ import {
   isIntervalColumn,
   isJsonLike,
   mapPostgresTypeToTypescriptType,
-  pgTypeToUnnestType,
+  pgTypeToArrayMemberTypeExpression,
+  pgTypeToUnnestColumnTypeExpression,
 } from "./mappers";
 
 type BuildArgs = {
@@ -167,7 +172,19 @@ function buildImports({ columns }: { columns: TableColumn[] }): string {
 
   const domains = columns.filter(isDomainColumn);
   if (domains.length > 0) {
-    imports.push(`import * as Domains from "../domains"`);
+    // A domain column's schema doesn't have to match the table's own schema (a genuine
+    // cross-schema domain reference), so each distinct alias needed gets its own import rather
+    // than assuming everything comes from the table's own `../domains`.
+    const domainImportsByAlias = new Map<string, string>(
+      domains.map((column) => [
+        domainColumnToImportAlias(column),
+        domainColumnToImportPath(column),
+      ]),
+    );
+
+    domainImportsByAlias.forEach((importPath, alias) => {
+      imports.push(`import * as ${alias} from "${importPath}"`);
+    });
   }
 
   const ranges = columns.filter((col) => isBuiltInRange(col));
@@ -289,7 +306,7 @@ function buildCreateManyFunction({
     )
     .join(`,\n    `);
   const unnestTypes = createColumns
-    .map((col) => `"${pgTypeToUnnestType(col)}"`)
+    .map((col) => pgTypeToUnnestColumnTypeExpression(col))
     .join(", ");
 
   return `export async function createMany({
@@ -336,7 +353,7 @@ function buildGetManyFunction({
 }: {
   primaryKey: TableColumn;
 }): string {
-  const primaryKeySqlType = pgTypeToUnnestType(primaryKey);
+  const primaryKeySqlType = pgTypeToArrayMemberTypeExpression(primaryKey);
 
   return `export async function getMany({
   connection,
@@ -345,7 +362,7 @@ function buildGetManyFunction({
   const query = sql.type(row)\`
     SELECT \${columnsFragment}
     FROM \${tableFragment}
-    WHERE ${primaryKey.name} = ANY(\${sql.array(ids, "${primaryKeySqlType}")})\`;
+    WHERE ${primaryKey.name} = ANY(\${sql.array(ids, ${primaryKeySqlType})})\`;
 
   return connection.any(query);
 }`;
@@ -445,8 +462,8 @@ function buildUpdateManyFunction({
     .map((c) => `${c.name} = input.${c.name}`)
     .join(",\n      ");
 
-  const unnestTypes = primaryKeyAndUpdatableColumns.map(
-    (col) => `"${pgTypeToUnnestType(col)}"`,
+  const unnestTypes = primaryKeyAndUpdatableColumns.map((col) =>
+    pgTypeToUnnestColumnTypeExpression(col),
   );
 
   return `export function updateMany({
@@ -494,7 +511,7 @@ function buildDeleteManyFunction({
 }: {
   primaryKey: TableColumn;
 }): string {
-  const primaryKeySqlType = pgTypeToUnnestType(primaryKey);
+  const primaryKeySqlType = pgTypeToArrayMemberTypeExpression(primaryKey);
 
   return `export async function deleteMany({
   connection,
@@ -502,7 +519,7 @@ function buildDeleteManyFunction({
 }: DeleteManyArgs): Promise<void> {
   const query = sql.type(row)\`
     DELETE FROM \${tableFragment}
-    WHERE ${primaryKey.name} = ANY(\${sql.array(ids, "${primaryKeySqlType}")})\`;
+    WHERE ${primaryKey.name} = ANY(\${sql.array(ids, ${primaryKeySqlType})})\`;
 
   await connection.query(query);
 }`;
@@ -607,6 +624,7 @@ function buildSingleColumnIndexFunction({
   });
 
   const getManyFunctionName = `getManyBy${columnNamePascalCase}`;
+  const columnSqlType = pgTypeToArrayMemberTypeExpression(column);
   const getManyFunction = `export async function ${getManyFunctionName}({
     connection,
     ${getManyArgumentName},
@@ -615,7 +633,7 @@ function buildSingleColumnIndexFunction({
   return connection.any(sql.type(row)\`
     SELECT \${columnsFragment}
     FROM \${tableFragment}
-    WHERE ${columnName} = ANY(\${sql.array(list, "${pgTypeToUnnestType(column)}")})\`);
+    WHERE ${columnName} = ANY(\${sql.array(list, ${columnSqlType})})\`);
   }`;
 
   const getArgsName = `GetBy${columnNamePascalCase}Args`;
@@ -696,7 +714,9 @@ function buildMultiColumnIndexFunction({
     }[];
   };`;
 
-  const unnestTypes = columns.map((col) => `"${pgTypeToUnnestType(col)}"`);
+  const unnestTypes = columns.map((col) =>
+    pgTypeToUnnestColumnTypeExpression(col),
+  );
   const inputColumnNames = columns.map((col) => col.name).join(", ");
 
   const tuples = columns

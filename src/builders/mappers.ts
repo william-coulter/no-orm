@@ -132,7 +132,10 @@ export function pgTypeToUnnestType(column: TableColumn): string {
   } else if (isEnumColumn(column)) {
     return column.informationSchemaValue.udt_name;
   } else if (isDomainColumn(column)) {
-    return column.informationSchemaValue.domain_name!;
+    // Bare domain names resolve against `search_path`, which breaks the cast the moment the
+    // domain's schema isn't on it (e.g. a non-public schema, or a genuine cross-schema
+    // reference). Schema-qualify it so the cast is unambiguous regardless of `search_path`.
+    return `${column.informationSchemaValue.domain_schema}.${column.informationSchemaValue.domain_name}`;
   } else if (isRangeColumn(column)) {
     return column.informationSchemaValue.udt_name;
   } else if (isCompositeColumn(column)) {
@@ -140,12 +143,35 @@ export function pgTypeToUnnestType(column: TableColumn): string {
     throw new UnsupportedCompositeType(column);
   }
 
-  logger.warn(`Could not map column to a unnest type, defaulting to "text". 
+  logger.warn(`Could not map column to a unnest type, defaulting to "text".
   Schema: '${column.informationSchemaValue.table_schema}'.
   Table: '${column.informationSchemaValue.table_name}'.
   Column: '${column.name}'.
   Type: ${JSON.stringify(column.type, null, 2)}`);
   return "text";
+}
+
+// Slonik treats a plain string column type as a single identifier and escapes it as one token
+// (`"schema.name"`, dot included), so a schema-qualified type name has to be expressed as an
+// identifier-path array instead — `["schema", "name"]` — which Slonik escapes and joins
+// per-segment into the real qualified identifier `"schema"."name"`.
+export function pgTypeToUnnestColumnTypeExpression(column: TableColumn): string {
+  const parts = pgTypeToUnnestType(column).split(".");
+  return parts.length > 1
+    ? `[${parts.map((part) => `"${part}"`).join(", ")}]`
+    : `"${parts[0]}"`;
+}
+
+// `sql.array` has no identifier-path form the way `sql.unnest` does — a plain string member
+// type is always escaped as a single identifier, so a schema-qualified type name is instead
+// passed as a raw `sql.fragment` with the qualified name already quoted per-segment. The
+// trailing `[]` has to be included in the fragment by hand: unlike the plain-string path,
+// `sql.array` doesn't append it when the member type is a fragment.
+export function pgTypeToArrayMemberTypeExpression(column: TableColumn): string {
+  const parts = pgTypeToUnnestType(column).split(".");
+  return parts.length > 1
+    ? `sql.fragment\`${parts.map((part) => `"${part}"`).join(".")}[]\``
+    : `"${parts[0]}"`;
 }
 
 /** Given a postgres type (e.g `pg_catalog.int2`) will return zod schema. */

@@ -69,14 +69,37 @@ export function domainDetailsToTypescriptType(details: DomainDetails): string {
   return `${snakeToPascalCase(details.name)}`;
 }
 
+// When a domain's schema differs from its table's, the table's own `../domains` import would
+// silently resolve to the wrong domain (or nothing at all) — so cross-schema domains get their
+// own import aliased after the domain's own schema instead.
+export function domainColumnToImportAlias(column: DomainColumn): string {
+  const domainSchema = column.informationSchemaValue.domain_schema!;
+  const tableSchema = column.informationSchemaValue.table_schema;
+
+  return domainSchema === tableSchema
+    ? "Domains"
+    : `${snakeToPascalCase(domainSchema)}Domains`;
+}
+
+export function domainColumnToImportPath(column: DomainColumn): string {
+  const domainSchema = column.informationSchemaValue.domain_schema!;
+  const tableSchema = column.informationSchemaValue.table_schema;
+
+  return domainSchema === tableSchema
+    ? "../domains"
+    : `../../${domainSchema}/domains`;
+}
+
 export function domainColumnToZodSchemaName(column: DomainColumn): string {
-  return `Domains.Schemas.${snakeToCamelCase(
+  const namespace = domainColumnToImportAlias(column);
+  return `${namespace}.Schemas.${snakeToCamelCase(
     column.informationSchemaValue.domain_name!,
   )}`;
 }
 
 export function domainColumnToTypescriptType(column: DomainColumn): string {
-  return `Domains.Types.${snakeToPascalCase(
+  const namespace = domainColumnToImportAlias(column);
+  return `${namespace}.Types.${snakeToPascalCase(
     column.informationSchemaValue.domain_name!,
   )}`;
 }

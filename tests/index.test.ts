@@ -59,21 +59,29 @@ describe("no-orm", () => {
       name: "Test the no-orm config",
       directory: path.join(TESTS_DIR, "test-config"),
     },
+    {
+      name: "Test cross-schema domain references",
+      directory: path.join(TESTS_DIR, "test-cross-schema-domains"),
+    },
   ];
 
   afterEach(async () => {
-    // Drop tables for the next test.
+    // This drops every schema, not just the tables in `public`, since the cross-schema domain
+    // test creates its own schemas that need cleaning up too.
     await client.query(`
       DO $$ DECLARE
         r RECORD;
       BEGIN
-        FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
-          EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
-        END LOOP;
-        FOR r IN (SELECT typname FROM pg_type WHERE typnamespace = 'public'::regnamespace) LOOP
-          EXECUTE 'DROP TYPE IF EXISTS ' || quote_ident(r.typname) || ' CASCADE';
+        FOR r IN (
+          SELECT nspname FROM pg_namespace
+          WHERE nspname NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+            AND nspname NOT LIKE 'pg_temp_%'
+            AND nspname NOT LIKE 'pg_toast_temp_%'
+        ) LOOP
+          EXECUTE 'DROP SCHEMA IF EXISTS ' || quote_ident(r.nspname) || ' CASCADE';
         END LOOP;
       END $$;
+      CREATE SCHEMA public;
     `);
   });
 
