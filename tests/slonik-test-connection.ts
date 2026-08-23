@@ -28,24 +28,25 @@ export async function createDatabasePool({
  */
 function createResultParserInterceptor(): Interceptor {
   return {
-    transformRow: async (executionContext, actualQuery, row) => {
+    name: "no-orm-result-parser",
+    transformRowAsync: async (executionContext, actualQuery, row) => {
       const { resultParser } = executionContext;
 
       if (!resultParser) {
         return row;
       }
 
-      const validationResult = await resultParser.safeParseAsync(row);
+      const validationResult = await resultParser["~standard"].validate(row);
 
-      if (!validationResult.success) {
+      if (validationResult.issues) {
         throw new SchemaValidationError(
           actualQuery,
           row,
-          validationResult.error.issues,
+          validationResult.issues,
         );
       }
 
-      return validationResult.data as QueryResultRow;
+      return validationResult.value as QueryResultRow;
     },
   };
 }

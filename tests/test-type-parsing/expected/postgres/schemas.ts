@@ -1,18 +1,8 @@
 import { z } from "zod";
 import { Range } from "postgres-range";
 import type { IPostgresInterval } from "postgres-interval";
-import * as Types from "./types";
 
-export const json: z.ZodType<Types.Json> = z.lazy(() =>
-  z.union([
-    z.string(),
-    z.number(),
-    z.boolean(),
-    z.null(),
-    z.array(json),
-    z.record(json),
-  ]),
-);
+export const json = z.json();
 
 export const interval = z.custom<IPostgresInterval>(
   (val) => {
