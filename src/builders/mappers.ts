@@ -151,16 +151,10 @@ export function pgTypeToUnnestType(column: TableColumn): string {
   return "text";
 }
 
-/**
- * Renders `pgTypeToUnnestType`'s output as a column type entry for a generated
- * `sql.unnest(...)` call.
- *
- * Slonik treats a plain string column type as a single identifier and escapes it as one token
- * (`"schema.name"`, dot included), so a schema-qualified type name (currently only possible for
- * a domain column) has to be expressed as an identifier-path array instead — `["schema",
- * "name"]` — which Slonik escapes and joins per-segment into the real qualified identifier
- * `"schema"."name"`. Anything unqualified renders exactly as it always has.
- */
+// Slonik treats a plain string column type as a single identifier and escapes it as one token
+// (`"schema.name"`, dot included), so a schema-qualified type name has to be expressed as an
+// identifier-path array instead — `["schema", "name"]` — which Slonik escapes and joins
+// per-segment into the real qualified identifier `"schema"."name"`.
 export function pgTypeToUnnestColumnTypeExpression(column: TableColumn): string {
   const parts = pgTypeToUnnestType(column).split(".");
   return parts.length > 1
@@ -168,16 +162,11 @@ export function pgTypeToUnnestColumnTypeExpression(column: TableColumn): string 
     : `"${parts[0]}"`;
 }
 
-/**
- * Renders `pgTypeToUnnestType`'s output as the member-type argument for a generated
- * `sql.array(...)` call.
- *
- * `sql.array` has no identifier-path form the way `sql.unnest` does — a plain string member
- * type is always escaped as a single identifier, so a schema-qualified type name is instead
- * passed as a raw `sql.fragment` with the qualified name already quoted per-segment. Note the
- * trailing `[]` has to be included in the fragment by hand: unlike the plain-string path,
- * `sql.array` doesn't append it when the member type is a fragment.
- */
+// `sql.array` has no identifier-path form the way `sql.unnest` does — a plain string member
+// type is always escaped as a single identifier, so a schema-qualified type name is instead
+// passed as a raw `sql.fragment` with the qualified name already quoted per-segment. The
+// trailing `[]` has to be included in the fragment by hand: unlike the plain-string path,
+// `sql.array` doesn't append it when the member type is a fragment.
 export function pgTypeToArrayMemberTypeExpression(column: TableColumn): string {
   const parts = pgTypeToUnnestType(column).split(".");
   return parts.length > 1

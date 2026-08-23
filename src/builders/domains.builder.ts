@@ -69,16 +69,9 @@ export function domainDetailsToTypescriptType(details: DomainDetails): string {
   return `${snakeToPascalCase(details.name)}`;
 }
 
-/**
- * Returns the namespace a table file should reference a domain column's `Domains` module
- * through, and the relative path it should be imported from.
- *
- * When the domain lives in the same schema as the table referencing it, this is the table's own
- * `../domains` import, aliased plainly as `Domains` (matching the existing single-schema
- * convention). When the domain lives in a *different* schema — a genuine cross-schema domain
- * reference — the table's own `../domains` import would silently resolve to the wrong domain (or
- * to nothing at all), so a separate import aliased after the domain's own schema is used instead.
- */
+// When a domain's schema differs from its table's, the table's own `../domains` import would
+// silently resolve to the wrong domain (or nothing at all) — so cross-schema domains get their
+// own import aliased after the domain's own schema instead.
 export function domainColumnToImportAlias(column: DomainColumn): string {
   const domainSchema = column.informationSchemaValue.domain_schema!;
   const tableSchema = column.informationSchemaValue.table_schema;
@@ -88,7 +81,6 @@ export function domainColumnToImportAlias(column: DomainColumn): string {
     : `${snakeToPascalCase(domainSchema)}Domains`;
 }
 
-/** The relative import path paired with {@link domainColumnToImportAlias} for a domain column. */
 export function domainColumnToImportPath(column: DomainColumn): string {
   const domainSchema = column.informationSchemaValue.domain_schema!;
   const tableSchema = column.informationSchemaValue.table_schema;

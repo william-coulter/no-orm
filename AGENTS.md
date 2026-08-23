@@ -165,6 +165,14 @@ There is no CI yet; run the suite locally before opening a PR.
   imports them from there.
 - `IDEA:` comments mark deliberate future work; the README lists larger planned features.
 
+## Comments
+
+Default to none. Only add one for a non-obvious WHY — hidden constraint, subtle
+invariant, bug workaround, surprising behaviour. Never restate WHAT the code does.
+Test: if removing it wouldn't confuse a future reader, don't write it.
+
+Use full grammar for comments - it's how the human brain is used to reading things.
+
 ## Releases
 
 Changesets. After a behavioural change run `npx @changesets/cli` to annotate it. Versioning

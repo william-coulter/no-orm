@@ -66,7 +66,8 @@ describe("no-orm", () => {
   ];
 
   afterEach(async () => {
-    // Drop everything for the next test, including any non-public schemas a test case created.
+    // This drops every schema, not just the tables in `public`, since the cross-schema domain
+    // test creates its own schemas that need cleaning up too.
     await client.query(`
       DO $$ DECLARE
         r RECORD;
