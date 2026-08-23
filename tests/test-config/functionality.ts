@@ -6,6 +6,10 @@ import * as Tables from "./expected/custom-path/public/tables";
 const pool = await createDatabasePool({ type_parsers: requiredTypeParsers });
 
 await pool.connect(async (connection) => {
+  // With `readonly_time_columns: false` set on the `penguins` table config, `created_at`
+  // and `updated_at` should now be settable on create.
+  const createdAt = new Date("2024-06-01T03:00:00+10:00");
+
   const penguinCreate = await Tables.Penguins.create({
     connection,
     shape: {
@@ -14,18 +18,16 @@ await pool.connect(async (connection) => {
       waddle_speed_kph: 0.5,
       favourite_snack: null,
       date_of_birth: new Date("2025-01-01T03:00:00+10:00"),
+      created_at: createdAt,
+      // `penguins` has an `updated_at` trigger, so whatever we pass here gets
+      // overwritten by Postgres on write. We still pass it to prove it's settable.
+      updated_at: createdAt,
     },
   });
 
-  if (!penguinCreate.created_at) {
+  if (penguinCreate.created_at?.getTime() !== createdAt.getTime()) {
     throw new Error(
-      `Row should have \`created_at\` field but does not: ${Object.keys(penguinCreate)}`,
-    );
-  }
-
-  if (!penguinCreate.updated_at) {
-    throw new Error(
-      `Row should have \`updated_at\` field but does not: ${Object.keys(penguinCreate)}`,
+      `Row should have settable \`created_at\` field of ${createdAt.toISOString()} but got: ${penguinCreate.created_at}`,
     );
   }
 
@@ -61,6 +63,8 @@ await pool.connect(async (connection) => {
       waddle_speed_kph: 1.0,
       favourite_snack: null,
       date_of_birth: new Date("2025-01-02T03:00:00+10:00"),
+      created_at: createdAt,
+      updated_at: createdAt,
     },
   });
 

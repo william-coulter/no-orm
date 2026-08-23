@@ -113,10 +113,6 @@ top-level `NoOrmConfig` and `noOrmConfigSchema` agree. Its `TypeEqualityGuard` o
 unions, so it does **not** catch divergence in nested objects — when you add a field to any config
 type, add it to the corresponding Zod schema by hand, or Zod will silently strip it at parse time.
 
-> Known instance of exactly this: `TableConfig.readonly_time_columns` exists on the type but is
-> missing from `tableConfigSchema`, so setting it in a user config has no effect. The
-> `created_at`/`updated_at` columns are always treated as readonly.
-
 `Ignorable<T>` (`config/ignorable.ts`) is the shared shape for schema/table config: either
 `{ ignore: true }` or the real config. Parsers narrow it with the `NonIgnoredConfig` `Extract<>`
 aliases exported from each parser.
