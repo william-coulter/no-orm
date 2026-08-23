@@ -59,10 +59,19 @@ means touching four functions in lockstep:
 - `mapPostgresTypeToZodSchema` — the Zod schema in the generated `row` object
 - `mapPostgresTypeToTypescriptType` — the TS type in `Create` / `Update` shapes
 - `columnToSlonikPrimitiveValue` — how a JS value is serialised into a Slonik `UNNEST` tuple
-- `pgTypeToUnnestType` — the Postgres type name in the `UNNEST` cast
+- `pgTypeToUnnestType` — the Postgres type name used in casts (schema-qualified for domains, since a
+  bare name only resolves if its schema happens to be on `search_path`)
 
 Miss one and you get a runtime failure inside generated queries rather than a generation error.
 Unknown types don't throw — they log a warning and fall back to `z.any()` / `any`.
+
+`pgTypeToUnnestType`'s output is never spliced into generated code directly — it's rendered through
+`pgTypeToUnnestColumnTypeExpression` (for `sql.unnest` column type lists) or
+`pgTypeToArrayMemberTypeExpression` (for `sql.array`'s member type). Both exist because Slonik
+escapes a plain string type as a single identifier: a dotted name like `"schema.name"` would
+escape into one bogus identifier rather than a qualified reference. A schema-qualified type
+therefore renders as an identifier-path array (`["schema", "name"]`) for `sql.unnest`, or as a
+`sql.fragment` with the parts pre-quoted for `sql.array`, which has no array-path form.
 
 Non-base column kinds (`enum`, `domain`, `range`) are dispatched via the type guards in
 `column-types.ts` and handled by their own builders, which emit branded Zod schemas
