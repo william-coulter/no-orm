@@ -1,66 +1,66 @@
 /**
  * Tests that the functions from `model` execute without errors against the DB.
  *
- * This is specifically a regression test for cross-schema domain columns: `billing.invoices`
- * has a column typed as `inventory`'s domain, and `inventory.products` has a column typed as
- * `billing`'s domain. `createMany`/`updateMany` are what actually cast via `sql.unnest`, so
+ * This is specifically a regression test for cross-schema domain columns: `colony.chicks`
+ * has a column typed as `feeding`'s domain, and `feeding.deliveries` has a column typed as
+ * `colony`'s domain. `createMany`/`updateMany` are what actually cast via `sql.unnest`, so
  * reads alone wouldn't catch a bare (unqualified) domain name in that cast.
  */
 import { createDatabasePool } from "../slonik-test-connection";
-import * as BillingTables from "./expected/billing/tables";
-import * as InventoryTables from "./expected/inventory/tables";
+import * as ColonyTables from "./expected/colony/tables";
+import * as FeedingTables from "./expected/feeding/tables";
 import { requiredTypeParsers } from "./expected/slonik/type-parsers";
 
 const pool = await createDatabasePool({ type_parsers: requiredTypeParsers });
 
 await pool.connect(async (connection) => {
-  // `billing.invoices.quantity` is typed as `inventory.stock_level` — a domain defined in a
+  // `colony.chicks.fish_ration` is typed as `feeding.fish_count` — a domain defined in a
   // different schema to the table. `createMany` casts through `sql.unnest`, which is where an
-  // unqualified domain name would fail with `type "stock_level[]" does not exist`.
-  const [invoiceCreate] = await BillingTables.Invoices.createMany({
+  // unqualified domain name would fail with `type "fish_count[]" does not exist`.
+  const [chickCreate] = await ColonyTables.Chicks.createMany({
     connection,
-    shapes: [{ reference: "INV-0001", quantity: 5 }],
+    shapes: [{ name: "Pip", fish_ration: 5 }],
   });
 
-  if (invoiceCreate.quantity !== 5) {
+  if (chickCreate.fish_ration !== 5) {
     throw new Error(
-      `Expected created invoice to have quantity 5, got: ${invoiceCreate.quantity}`,
+      `Expected created chick to have fish_ration 5, got: ${chickCreate.fish_ration}`,
     );
   }
 
-  const [invoiceUpdate] = await BillingTables.Invoices.updateMany({
+  const [chickUpdate] = await ColonyTables.Chicks.updateMany({
     connection,
-    newRows: [{ ...invoiceCreate, quantity: 10 }],
+    newRows: [{ ...chickCreate, fish_ration: 10 }],
   });
 
-  if (invoiceUpdate.quantity !== 10) {
+  if (chickUpdate.fish_ration !== 10) {
     throw new Error(
-      `Expected updated invoice to have quantity 10, got: ${invoiceUpdate.quantity}`,
+      `Expected updated chick to have fish_ration 10, got: ${chickUpdate.fish_ration}`,
     );
   }
 
-  // `inventory.products.price_currency` is typed as `billing.currency_code` — the reverse
+  // `feeding.deliveries.recipient_band` is typed as `colony.band_code` — the reverse
   // cross-schema reference, exercising the same `createMany`/`updateMany` cast in the other
   // direction.
-  const [productCreate] = await InventoryTables.Products.createMany({
+  const [deliveryCreate] = await FeedingTables.Deliveries.createMany({
     connection,
-    shapes: [{ name: "Widget", price_currency: "USD" }],
+    shapes: [{ courier: "Skipper", recipient_band: "ADL" }],
   });
 
-  if (productCreate.price_currency !== "USD") {
+  if (deliveryCreate.recipient_band !== "ADL") {
     throw new Error(
-      `Expected created product to have price_currency 'USD', got: ${productCreate.price_currency}`,
+      `Expected created delivery to have recipient_band 'ADL', got: ${deliveryCreate.recipient_band}`,
     );
   }
 
-  const [productUpdate] = await InventoryTables.Products.updateMany({
+  const [deliveryUpdate] = await FeedingTables.Deliveries.updateMany({
     connection,
-    newRows: [{ ...productCreate, price_currency: "EUR" }],
+    newRows: [{ ...deliveryCreate, recipient_band: "EMP" }],
   });
 
-  if (productUpdate.price_currency !== "EUR") {
+  if (deliveryUpdate.recipient_band !== "EMP") {
     throw new Error(
-      `Expected updated product to have price_currency 'EUR', got: ${productUpdate.price_currency}`,
+      `Expected updated delivery to have recipient_band 'EMP', got: ${deliveryUpdate.recipient_band}`,
     );
   }
 });

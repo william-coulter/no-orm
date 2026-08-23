@@ -1,18 +1,18 @@
 import { z } from "zod";
 import { type CommonQueryMethods, type ListSqlToken, sql } from "slonik";
-import * as BillingDomains from "../../billing/domains";
+import * as ColonyDomains from "../../colony/domains";
 
 export const row = z.object({
-  id: z.number().brand<"inventory.products.id">(),
-  name: z.string(),
-  price_currency: BillingDomains.Schemas.currencyCode,
+  id: z.number().brand<"feeding.deliveries.id">(),
+  courier: z.string(),
+  recipient_band: ColonyDomains.Schemas.bandCode,
 });
 
 export type Row = z.infer<typeof row>;
 
 export type Id = Row["id"];
 
-export const tableFragment = sql.identifier(["inventory", "products"]);
+export const tableFragment = sql.identifier(["feeding", "deliveries"]);
 
 export const columns = Object.keys(row.shape).map((col) =>
   sql.identifier([col]),
@@ -31,8 +31,8 @@ export function aliasColumns(alias: string): ListSqlToken {
 type BaseArgs = { connection: CommonQueryMethods };
 
 export type Create = {
-  name: string;
-  price_currency: BillingDomains.Types.CurrencyCode;
+  courier: string;
+  recipient_band: ColonyDomains.Types.BandCode;
 };
 
 export type CreateManyArgs = BaseArgs & { shapes: Create[] };
@@ -41,16 +41,16 @@ export async function createMany({
   connection,
   shapes,
 }: CreateManyArgs): Promise<readonly Row[]> {
-  const tuples = shapes.map((shape) => [shape.name, shape.price_currency]);
+  const tuples = shapes.map((shape) => [shape.courier, shape.recipient_band]);
 
   const query = sql.type(row)`
     INSERT INTO ${tableFragment} (
-      name,
-      price_currency
+      courier,
+      recipient_band
     )
-    SELECT name, price_currency
-    FROM ${sql.unnest(tuples, ["text", ["billing", "currency_code"]])}
-      AS input(name, price_currency)
+    SELECT courier, recipient_band
+    FROM ${sql.unnest(tuples, ["text", ["colony", "band_code"]])}
+      AS input(courier, recipient_band)
     RETURNING ${columnsFragment}`;
 
   return connection.any(query);
@@ -109,8 +109,8 @@ export async function find({ connection, id }: FindArgs): Promise<Row | null> {
 }
 
 export type Update = {
-  name: string;
-  price_currency: BillingDomains.Types.CurrencyCode;
+  courier: string;
+  recipient_band: ColonyDomains.Types.BandCode;
 } & { id: Id };
 
 export type UpdateManyArgs = BaseArgs & { newRows: Update[] };
@@ -121,19 +121,19 @@ export function updateMany({
 }: UpdateManyArgs): Promise<readonly Row[]> {
   const tuples = newRows.map((newRow) => [
     newRow.id,
-    newRow.name,
-    newRow.price_currency,
+    newRow.courier,
+    newRow.recipient_band,
   ]);
 
   const query = sql.type(row)`
     UPDATE ${tableFragment} AS t SET
-      name = input.name,
-      price_currency = input.price_currency
+      courier = input.courier,
+      recipient_band = input.recipient_band
     FROM ${sql.unnest(tuples, [
       "int4",
       "text",
-      ["billing", "currency_code"],
-    ])} AS input(id, name, price_currency)
+      ["colony", "band_code"],
+    ])} AS input(id, courier, recipient_band)
     WHERE t.id = input.id
     RETURNING ${aliasColumns("t")}`;
 
