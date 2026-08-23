@@ -27,7 +27,9 @@ describe("no-orm", () => {
       connectionString,
     });
     await client.connect();
-  });
+
+    // This can take long time for the first ever test on a machine.
+  }, 60000);
 
   afterAll(async () => {
     await client.end();
