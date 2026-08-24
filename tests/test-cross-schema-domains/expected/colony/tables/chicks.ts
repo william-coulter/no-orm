@@ -49,7 +49,7 @@ export async function createMany({
       fish_ration
     )
     SELECT name, fish_ration
-    FROM ${sql.unnest(tuples, ["text", ["feeding", "fish_count"]])}
+    FROM ${sql.unnest(tuples, [["text"], ["feeding", "fish_count"]])}
       AS input(name, fish_ration)
     RETURNING ${columnsFragment}`;
 
@@ -130,8 +130,8 @@ export function updateMany({
       name = input.name,
       fish_ration = input.fish_ration
     FROM ${sql.unnest(tuples, [
-      "int4",
-      "text",
+      ["int4"],
+      ["text"],
       ["feeding", "fish_count"],
     ])} AS input(id, name, fish_ration)
     WHERE t.id = input.id

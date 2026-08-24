@@ -71,7 +71,7 @@ export async function createMany({
       updated_at
     )
     SELECT name, species, waddle_speed_kph, favourite_snack, date_of_birth, created_at, updated_at
-    FROM ${sql.unnest(tuples, ["text", "text", "numeric", "text", "timestamptz", "timestamptz", "timestamptz"])}
+    FROM ${sql.unnest(tuples, [["text"], ["text"], ["numeric"], ["text"], ["timestamptz"], ["timestamptz"], ["timestamptz"]])}
       AS input(name, species, waddle_speed_kph, favourite_snack, date_of_birth, created_at, updated_at)
     RETURNING ${columnsFragment}`;
 
@@ -167,14 +167,14 @@ export function updateMany({
       created_at = input.created_at,
       updated_at = input.updated_at
     FROM ${sql.unnest(tuples, [
-      "int4",
-      "text",
-      "text",
-      "numeric",
-      "text",
-      "timestamptz",
-      "timestamptz",
-      "timestamptz",
+      ["int4"],
+      ["text"],
+      ["text"],
+      ["numeric"],
+      ["text"],
+      ["timestamptz"],
+      ["timestamptz"],
+      ["timestamptz"],
     ])} AS input(id, name, species, waddle_speed_kph, favourite_snack, date_of_birth, created_at, updated_at)
     WHERE t.id = input.id
     RETURNING ${aliasColumns("t")}`;
@@ -226,7 +226,7 @@ export async function getManyByNameAndSpecies({
   const query = sql.type(row)`
     SELECT ${aliasColumns("t")}
     FROM ${tableFragment} AS t
-    JOIN ${sql.unnest(tuples, ["text", "text"])} AS input(name, species)
+    JOIN ${sql.unnest(tuples, [["text"], ["text"]])} AS input(name, species)
       ON  input.name = t.name
       AND input.species = t.species`;
 

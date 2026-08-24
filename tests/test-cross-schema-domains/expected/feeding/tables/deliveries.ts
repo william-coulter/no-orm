@@ -49,7 +49,7 @@ export async function createMany({
       recipient_band
     )
     SELECT courier, recipient_band
-    FROM ${sql.unnest(tuples, ["text", ["colony", "band_code"]])}
+    FROM ${sql.unnest(tuples, [["text"], ["colony", "band_code"]])}
       AS input(courier, recipient_band)
     RETURNING ${columnsFragment}`;
 
@@ -130,8 +130,8 @@ export function updateMany({
       courier = input.courier,
       recipient_band = input.recipient_band
     FROM ${sql.unnest(tuples, [
-      "int4",
-      "text",
+      ["int4"],
+      ["text"],
       ["colony", "band_code"],
     ])} AS input(id, courier, recipient_band)
     WHERE t.id = input.id
