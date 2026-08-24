@@ -111,6 +111,10 @@ describe("no-orm", () => {
     );
     expect(noOrmResult.exitCode).toEqual(0);
 
+    // `tsx` only strips types, it doesn't check them, so a `sql.unnest`-shaped bug can pass every
+    // other assertion here while still failing to compile for a consumer running a real `tsc`.
+    await typecheckGeneratedOutput(testOutputDir);
+
     // For every file in `expected`, let's assert the same file exists in `test-outputs` and that it matches.
     const expectedPath = path.join(testCase.directory, "expected");
     const expectedFilePaths = await getAllRelativeFilePaths(expectedPath);
@@ -173,6 +177,27 @@ describe("no-orm", () => {
     });
   });
 });
+
+/** Type-checks the generated output against the project's own compiler options. */
+async function typecheckGeneratedOutput(outputDir: string): Promise<void> {
+  const rootTsconfigPath = path.resolve(__dirname, "../tsconfig.json");
+  const extendsPath = path.relative(outputDir, rootTsconfigPath);
+
+  const typecheckConfigPath = path.join(outputDir, "tsconfig.typecheck.json");
+  await fs.writeFile(
+    typecheckConfigPath,
+    JSON.stringify({
+      extends: extendsPath.startsWith(".") ? extendsPath : `./${extendsPath}`,
+      compilerOptions: { noEmit: true },
+      include: ["**/*.ts"],
+    }),
+  );
+
+  const result = await execa("npx", ["tsc", "-p", typecheckConfigPath], {
+    reject: false,
+  });
+  expect(result.exitCode, result.stdout || result.stderr).toEqual(0);
+}
 
 /* Recursively walks a directory and return all file paths relative to `baseDir`. */
 async function getAllRelativeFilePaths(
