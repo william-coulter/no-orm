@@ -151,15 +151,14 @@ export function pgTypeToUnnestType(column: TableColumn): string {
   return "text";
 }
 
-// Slonik treats a plain string column type as a single identifier and escapes it as one token
-// (`"schema.name"`, dot included), so a schema-qualified type name has to be expressed as an
-// identifier-path array instead — `["schema", "name"]` — which Slonik escapes and joins
-// per-segment into the real qualified identifier `"schema"."name"`.
+// A schema-qualified type has to be passed as an identifier-path tuple (`["schema", "name"]`)
+// rather than a plain string, or Slonik escapes the dot into the identifier instead of treating
+// it as a separator. Every element is wrapped as a tuple, even single-part types, since a
+// `sql.unnest` call's `columnTypes` array must be uniformly tuples or uniformly strings — it
+// can't mix the two — and a table can mix plain and schema-qualified columns.
 export function pgTypeToUnnestColumnTypeExpression(column: TableColumn): string {
   const parts = pgTypeToUnnestType(column).split(".");
-  return parts.length > 1
-    ? `[${parts.map((part) => `"${part}"`).join(", ")}]`
-    : `"${parts[0]}"`;
+  return `[${parts.map((part) => `"${part}"`).join(", ")}]`;
 }
 
 // `sql.array` has no identifier-path form the way `sql.unnest` does — a plain string member

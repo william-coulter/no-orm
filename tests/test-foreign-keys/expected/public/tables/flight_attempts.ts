@@ -68,7 +68,7 @@ export async function createMany({
       failure_reason
     )
     SELECT penguin, method, attempted_at, altitude_cm, success, failure_reason
-    FROM ${sql.unnest(tuples, ["int4", "text", "timestamptz", "int4", "bool", "text"])}
+    FROM ${sql.unnest(tuples, [["int4"], ["text"], ["timestamptz"], ["int4"], ["bool"], ["text"]])}
       AS input(penguin, method, attempted_at, altitude_cm, success, failure_reason)
     RETURNING ${columnsFragment}`;
 
@@ -161,13 +161,13 @@ export function updateMany({
       success = input.success,
       failure_reason = input.failure_reason
     FROM ${sql.unnest(tuples, [
-      "int4",
-      "int4",
-      "text",
-      "timestamptz",
-      "int4",
-      "bool",
-      "text",
+      ["int4"],
+      ["int4"],
+      ["text"],
+      ["timestamptz"],
+      ["int4"],
+      ["bool"],
+      ["text"],
     ])} AS input(id, penguin, method, attempted_at, altitude_cm, success, failure_reason)
     WHERE t.id = input.id
     RETURNING ${aliasColumns("t")}`;

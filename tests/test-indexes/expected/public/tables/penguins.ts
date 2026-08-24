@@ -63,7 +63,7 @@ export async function createMany({
       date_of_birth
     )
     SELECT name, species, waddle_speed_kph, favourite_snack, date_of_birth
-    FROM ${sql.unnest(tuples, ["text", "text", "numeric", "text", "timestamptz"])}
+    FROM ${sql.unnest(tuples, [["text"], ["text"], ["numeric"], ["text"], ["timestamptz"]])}
       AS input(name, species, waddle_speed_kph, favourite_snack, date_of_birth)
     RETURNING ${columnsFragment}`;
 
@@ -153,12 +153,12 @@ export function updateMany({
       favourite_snack = input.favourite_snack,
       date_of_birth = input.date_of_birth
     FROM ${sql.unnest(tuples, [
-      "int4",
-      "text",
-      "text",
-      "numeric",
-      "text",
-      "timestamptz",
+      ["int4"],
+      ["text"],
+      ["text"],
+      ["numeric"],
+      ["text"],
+      ["timestamptz"],
     ])} AS input(id, name, species, waddle_speed_kph, favourite_snack, date_of_birth)
     WHERE t.id = input.id
     RETURNING ${aliasColumns("t")}`;
@@ -214,8 +214,8 @@ export async function getManyBySpeciesAndDateOfBirth({
     SELECT ${aliasColumns("t")}
     FROM ${tableFragment} AS t
     JOIN ${sql.unnest(tuples, [
-      "text",
-      "timestamptz",
+      ["text"],
+      ["timestamptz"],
     ])} AS input(species, date_of_birth)
       ON  input.species = t.species
       AND input.date_of_birth = t.date_of_birth`;
