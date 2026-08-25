@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { type CommonQueryMethods, type ListSqlToken, sql } from "slonik";
+import {
+  type CommonQueryMethods,
+  type DatabaseTransactionConnection,
+  type ListSqlToken,
+  sql,
+} from "slonik";
 import { type Row as PenguinsRow } from "../tables/penguins";
 
 export const row = z.object({
@@ -109,6 +114,61 @@ export async function getManyMap({
 }: GetManyArgs): Promise<Map<Id, Row>> {
   const rows = await getMany({ connection, ids });
   return new Map<Id, Row>(rows.map((row) => [row.id, row]));
+}
+
+type LockArgs = { connection: DatabaseTransactionConnection };
+
+export type GetManyForUpdateArgs = LockArgs & { ids: Id[] };
+
+export async function getManyForUpdate({
+  connection,
+  ids,
+}: GetManyForUpdateArgs): Promise<readonly Row[]> {
+  const query = sql.type(row)`
+    SELECT ${columnsFragment}
+    FROM ${tableFragment}
+    WHERE id = ANY(${sql.array(ids, "int4")})
+    ORDER BY id
+    FOR UPDATE`;
+
+  return connection.any(query);
+}
+
+export type GetForUpdateArgs = LockArgs & { id: Id };
+
+export async function getForUpdate({
+  connection,
+  id,
+}: GetForUpdateArgs): Promise<Row> {
+  const result = await getManyForUpdate({ connection, ids: [id] });
+  return result[0];
+}
+
+export type WithLockManyArgs = BaseArgs & { ids: Id[] };
+
+export function withLockMany<T>(
+  { connection, ids }: WithLockManyArgs,
+  handler: (
+    rows: readonly Row[],
+    transaction: DatabaseTransactionConnection,
+  ) => Promise<T>,
+): Promise<T> {
+  return connection.transaction(async (transaction) => {
+    const lockedRows = await getManyForUpdate({ connection: transaction, ids });
+    return handler(lockedRows, transaction);
+  });
+}
+
+export type WithLockArgs = BaseArgs & { id: Id };
+
+export function withLock<T>(
+  { connection, id }: WithLockArgs,
+  handler: (row: Row, transaction: DatabaseTransactionConnection) => Promise<T>,
+): Promise<T> {
+  return connection.transaction(async (transaction) => {
+    const lockedRow = await getForUpdate({ connection: transaction, id });
+    return handler(lockedRow, transaction);
+  });
 }
 
 export type FindManyArgs = BaseArgs & { ids: number[] };

@@ -42,6 +42,20 @@ await pool.connect(async (connection) => {
     newRow: { ...read, waddle_speed_kph: 0.6, favourite_snack: "Pavlova" },
   });
 
+  await Tables.Penguins.withLock(
+    { connection, id: update.id },
+    async (penguin, transaction) => {
+      await Tables.Penguins.getForUpdate({ connection: transaction, id: penguin.id });
+
+      await Tables.Penguins.getManyForUpdate({
+        connection: transaction,
+        ids: [penguin.id],
+      });
+    },
+  );
+
+  await Tables.Penguins.withLockMany({ connection, ids: [update.id] }, async () => {});
+
   const _delete = await Tables.Penguins.delete({
     connection,
     id: update.id,

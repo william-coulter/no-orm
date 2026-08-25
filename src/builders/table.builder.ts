@@ -25,6 +25,10 @@ import {
   pgTypeToUnnestColumnTypeExpression,
 } from "./mappers";
 
+type LockMode = "FOR UPDATE";
+
+const LOCK_CLAUSES: Record<LockMode, string> = { "FOR UPDATE": "FOR UPDATE" };
+
 type BuildArgs = {
   table: TableDetails;
   primary_key: TableColumn;
@@ -98,6 +102,24 @@ ${buildGetFunction()}
 
 ${buildGetManyMapFunction({ primaryKey })}
 
+${buildLockArgsType()}
+
+${buildGetManyForUpdateArgsType()}
+
+${buildGetManyForUpdateFunction({ primaryKey })}
+
+${buildGetForUpdateArgsType()}
+
+${buildGetForUpdateFunction()}
+
+${buildWithLockManyArgsType()}
+
+${buildWithLockManyFunction()}
+
+${buildWithLockArgsType()}
+
+${buildWithLockFunction()}
+
 ${buildFindFunctions({ primaryKey })}
 
 ${buildUpdateType({ primaryKey, updatableColumns })}
@@ -154,7 +176,7 @@ function getUpdatableColumns({
 function buildImports({ columns }: { columns: TableColumn[] }): string {
   const DEFAULT_IMPORTS: string[] = [
     `import { z } from "zod"`,
-    `import { type CommonQueryMethods, type ListSqlToken, sql } from "slonik"`,
+    `import { type CommonQueryMethods, type DatabaseTransactionConnection, type ListSqlToken, sql } from "slonik"`,
   ];
   const imports = DEFAULT_IMPORTS;
 
@@ -390,6 +412,96 @@ function buildGetManyMapFunction({
 }: GetManyArgs): Promise<Map<Id, Row>> {
   const rows = await getMany({ connection, ids });
   return new Map<Id, Row>(rows.map((row) => [row.${primaryKey.name}, row]));
+}`;
+}
+
+/** Builds the unexported `LockArgs` type shared by the `*ForUpdate` functions. */
+function buildLockArgsType(): string {
+  return `type LockArgs = { connection: DatabaseTransactionConnection };`;
+}
+
+/** Builds the `GetManyForUpdateArgs` type. */
+function buildGetManyForUpdateArgsType(): string {
+  return `export type GetManyForUpdateArgs = LockArgs & { ids: Id[] };`;
+}
+
+function buildGetManyForUpdateFunction({
+  primaryKey,
+  mode = "FOR UPDATE",
+}: {
+  primaryKey: TableColumn;
+  mode?: LockMode;
+}): string {
+  const primaryKeySqlType = pgTypeToArrayMemberTypeExpression(primaryKey);
+  const lockClause = LOCK_CLAUSES[mode];
+
+  return `export async function getManyForUpdate({
+  connection,
+  ids,
+}: GetManyForUpdateArgs): Promise<readonly Row[]> {
+  const query = sql.type(row)\`
+    SELECT \${columnsFragment}
+    FROM \${tableFragment}
+    WHERE ${primaryKey.name} = ANY(\${sql.array(ids, ${primaryKeySqlType})})
+    ORDER BY ${primaryKey.name}
+    ${lockClause}\`;
+
+  return connection.any(query);
+}`;
+}
+
+/** Builds the `GetForUpdateArgs` type. */
+function buildGetForUpdateArgsType(): string {
+  return `export type GetForUpdateArgs = LockArgs & { id: Id };`;
+}
+
+function buildGetForUpdateFunction(): string {
+  return `export async function getForUpdate({
+  connection,
+  id,
+}: GetForUpdateArgs): Promise<Row> {
+  const result = await getManyForUpdate({ connection, ids: [id] });
+  return result[0];
+}`;
+}
+
+/** Builds the `WithLockManyArgs` type. */
+function buildWithLockManyArgsType(): string {
+  return `export type WithLockManyArgs = BaseArgs & { ids: Id[] };`;
+}
+
+function buildWithLockManyFunction(): string {
+  return `export function withLockMany<T>(
+  { connection, ids }: WithLockManyArgs,
+  handler: (
+    rows: readonly Row[],
+    transaction: DatabaseTransactionConnection,
+  ) => Promise<T>,
+): Promise<T> {
+  return connection.transaction(async (transaction) => {
+    const lockedRows = await getManyForUpdate({ connection: transaction, ids });
+    return handler(lockedRows, transaction);
+  });
+}`;
+}
+
+/** Builds the `WithLockArgs` type. */
+function buildWithLockArgsType(): string {
+  return `export type WithLockArgs = BaseArgs & { id: Id };`;
+}
+
+function buildWithLockFunction(): string {
+  return `export function withLock<T>(
+  { connection, id }: WithLockArgs,
+  handler: (
+    row: Row,
+    transaction: DatabaseTransactionConnection,
+  ) => Promise<T>,
+): Promise<T> {
+  return connection.transaction(async (transaction) => {
+    const lockedRow = await getForUpdate({ connection: transaction, id });
+    return handler(lockedRow, transaction);
+  });
 }`;
 }
 
