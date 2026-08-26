@@ -1,4 +1,4 @@
-import { Schema, TableDetails } from "extract-pg-schema";
+import { Schema } from "extract-pg-schema";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 
@@ -45,6 +45,8 @@ export async function parse({
     recursive: true,
   });
 
+  const generatedTableNames: string[] = [];
+
   for (const table of Object.values(schema.tables)) {
     // A little gross. I want test coverage on when `no-orm` raises an
     // error and I've written such a bullet-proof tool that I can't think
@@ -86,11 +88,12 @@ export async function parse({
       output_path: path.join(schemaOutputPath, "tables"),
       code_formatter: code_formatter,
     });
+
+    generatedTableNames.push(table.name);
   }
 
   await buildTableIndex({
-    tables: schema.tables,
-    config: config,
+    table_names: generatedTableNames,
     output_path: path.join(schemaOutputPath, "tables/index.ts"),
     code_formatter,
   });
@@ -192,29 +195,27 @@ async function buildRanges({
 }
 
 type BuildTableIndexArgs = {
-  tables: TableDetails[];
+  table_names: string[];
   output_path: string;
-  config: NonIgnoredConfig;
   code_formatter: (raw: string) => Promise<string>;
 };
 
 async function buildTableIndex({
-  tables,
-  config,
+  table_names,
   code_formatter,
   output_path,
 }: BuildTableIndexArgs): Promise<void> {
-  const content = tables
-    .map(({ name }) => {
-      if (config.table_configs.get(name)?.ignore === true) {
-        return null;
-      }
-
-      const pascalCase = snakeToPascalCase(name);
-      return `export * as ${pascalCase} from "./${name}"`;
-    })
-    .filter((s) => s !== null)
-    .join(";\n");
+  const content =
+    table_names.length === 0
+      ? // An empty file is not a module, so the schema barrel's
+        // `export * as Tables from "./tables"` would fail to compile.
+        "export {};"
+      : table_names
+          .map((name) => {
+            const pascalCase = snakeToPascalCase(name);
+            return `export * as ${pascalCase} from "./${name}"`;
+          })
+          .join(";\n");
 
   const formattedContent = await code_formatter(content);
   await writeFile(output_path, formattedContent, "utf-8");

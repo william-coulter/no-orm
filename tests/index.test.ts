@@ -63,6 +63,10 @@ describe("no-orm", () => {
       name: "Test cross-schema domain references",
       directory: path.join(TESTS_DIR, "test-cross-schema-domains"),
     },
+    {
+      name: "Test empty and skipped-table barrel generation",
+      directory: path.join(TESTS_DIR, "test-empty-states"),
+    },
   ];
 
   afterEach(async () => {
