@@ -1,0 +1,211 @@
+import { z } from "zod";
+import {
+  type CommonQueryMethods,
+  type DatabaseTransactionConnection,
+  type ListSqlToken,
+  sql,
+} from "slonik";
+
+export const row = z.object({
+  id: z.number().brand<"public.nests.id">(),
+  location: z.string(),
+});
+
+export type Row = z.infer<typeof row>;
+
+export type Id = Row["id"];
+
+export const tableFragment = sql.identifier(["public", "nests"]);
+
+export const columns = Object.keys(row.shape).map((col) =>
+  sql.identifier([col]),
+);
+
+export const columnsFragment = sql.join(columns, sql.fragment`, `);
+
+export function aliasColumns(alias: string): ListSqlToken {
+  const aliasedColumns = Object.keys(row.shape).map((col) =>
+    sql.identifier([alias, col]),
+  );
+
+  return sql.join(aliasedColumns, sql.fragment`, `);
+}
+
+type BaseArgs = { connection: CommonQueryMethods };
+
+export type Create = { location: string };
+
+export type CreateManyArgs = BaseArgs & { shapes: Create[] };
+
+export async function createMany({
+  connection,
+  shapes,
+}: CreateManyArgs): Promise<readonly Row[]> {
+  const tuples = shapes.map((shape) => [shape.location]);
+
+  const query = sql.type(row)`
+    INSERT INTO ${tableFragment} (
+      location
+    )
+    SELECT location
+    FROM ${sql.unnest(tuples, [["text"]])}
+      AS input(location)
+    RETURNING ${columnsFragment}`;
+
+  return connection.any(query);
+}
+
+export type CreateArgs = BaseArgs & { shape: Create };
+
+export async function create({ connection, shape }: CreateArgs): Promise<Row> {
+  const result = await createMany({ connection, shapes: [shape] });
+  return result[0];
+}
+
+export type GetManyArgs = BaseArgs & { ids: Id[] };
+
+export async function getMany({
+  connection,
+  ids,
+}: GetManyArgs): Promise<readonly Row[]> {
+  const query = sql.type(row)`
+    SELECT ${columnsFragment}
+    FROM ${tableFragment}
+    WHERE id = ANY(${sql.array(ids, "int4")})`;
+
+  return connection.any(query);
+}
+
+type GetArgs = BaseArgs & { id: Id };
+
+export async function get({ connection, id }: GetArgs): Promise<Row> {
+  const result = await getMany({ connection, ids: [id] });
+  return result[0];
+}
+
+export async function getManyMap({
+  connection,
+  ids,
+}: GetManyArgs): Promise<Map<Id, Row>> {
+  const rows = await getMany({ connection, ids });
+  return new Map<Id, Row>(rows.map((row) => [row.id, row]));
+}
+
+type LockArgs = { connection: DatabaseTransactionConnection };
+
+export type GetManyForUpdateArgs = LockArgs & { ids: Id[] };
+
+export async function getManyForUpdate({
+  connection,
+  ids,
+}: GetManyForUpdateArgs): Promise<readonly Row[]> {
+  const query = sql.type(row)`
+    SELECT ${columnsFragment}
+    FROM ${tableFragment}
+    WHERE id = ANY(${sql.array(ids, "int4")})
+    ORDER BY id
+    FOR UPDATE`;
+
+  return connection.any(query);
+}
+
+export type GetForUpdateArgs = LockArgs & { id: Id };
+
+export async function getForUpdate({
+  connection,
+  id,
+}: GetForUpdateArgs): Promise<Row> {
+  const result = await getManyForUpdate({ connection, ids: [id] });
+  return result[0];
+}
+
+export type WithLockManyArgs = BaseArgs & { ids: Id[] };
+
+export function withLockMany<T>(
+  { connection, ids }: WithLockManyArgs,
+  handler: (
+    rows: readonly Row[],
+    transaction: DatabaseTransactionConnection,
+  ) => Promise<T>,
+): Promise<T> {
+  return connection.transaction(async (transaction) => {
+    const lockedRows = await getManyForUpdate({ connection: transaction, ids });
+    return handler(lockedRows, transaction);
+  });
+}
+
+export type WithLockArgs = BaseArgs & { id: Id };
+
+export function withLock<T>(
+  { connection, id }: WithLockArgs,
+  handler: (row: Row, transaction: DatabaseTransactionConnection) => Promise<T>,
+): Promise<T> {
+  return connection.transaction(async (transaction) => {
+    const lockedRow = await getForUpdate({ connection: transaction, id });
+    return handler(lockedRow, transaction);
+  });
+}
+
+export type FindManyArgs = BaseArgs & { ids: number[] };
+
+export async function findMany({
+  connection,
+  ids,
+}: FindManyArgs): Promise<readonly Row[]> {
+  return getMany({ connection, ids: ids as Id[] });
+}
+
+export type FindArgs = BaseArgs & { id: number };
+
+export async function find({ connection, id }: FindArgs): Promise<Row | null> {
+  const result = await findMany({ connection, ids: [id] });
+  return result[0] ?? null;
+}
+
+export type Update = { location: string } & { id: Id };
+
+export type UpdateManyArgs = BaseArgs & { newRows: Update[] };
+
+export function updateMany({
+  connection,
+  newRows,
+}: UpdateManyArgs): Promise<readonly Row[]> {
+  const tuples = newRows.map((newRow) => [newRow.id, newRow.location]);
+
+  const query = sql.type(row)`
+    UPDATE ${tableFragment} AS t SET
+      location = input.location
+    FROM ${sql.unnest(tuples, [["int4"], ["text"]])} AS input(id, location)
+    WHERE t.id = input.id
+    RETURNING ${aliasColumns("t")}`;
+
+  return connection.any(query);
+}
+
+export type UpdateArgs = BaseArgs & { newRow: Update };
+
+export async function update({ connection, newRow }: UpdateArgs): Promise<Row> {
+  const result = await updateMany({ connection, newRows: [newRow] });
+  return result[0];
+}
+
+export type DeleteManyArgs = BaseArgs & { ids: Id[] };
+
+export async function deleteMany({
+  connection,
+  ids,
+}: DeleteManyArgs): Promise<void> {
+  const query = sql.type(row)`
+    DELETE FROM ${tableFragment}
+    WHERE id = ANY(${sql.array(ids, "int4")})`;
+
+  await connection.query(query);
+}
+
+export type DeleteArgs = BaseArgs & { id: Id };
+
+async function _delete({ connection, id }: DeleteArgs): Promise<void> {
+  await deleteMany({ connection, ids: [id] });
+}
+
+export { _delete as delete };
