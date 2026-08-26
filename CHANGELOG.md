@@ -1,5 +1,24 @@
 # no-orm-cli
 
+## 2.2.0
+
+### Minor Changes
+
+- 4c68acd: Generate row-locking helpers for every table: `getManyForUpdate` and `getForUpdate` run a
+  primary-key `SELECT ... FOR UPDATE` and take a `DatabaseTransactionConnection`, so calling them
+  outside a transaction is a compile error rather than a silent no-op lock. `withLock` and
+  `withLockMany` wrap the common case: they open a transaction, lock the row(s), and hand a
+  `(row, transaction)` pair to a caller-supplied handler. Locking is primary-key only — the
+  `getBy*` index functions and `find`/`findMany` don't get locking variants, since a `FOR UPDATE`
+  can't lock a function scan.
+
+### Patch Changes
+
+- a978a4f: Fix two bugs where the generated `tables` barrel could fail to compile: a schema with no
+  generatable tables (e.g. one holding only domains or enums) no longer emits an empty,
+  invalid `tables/index.ts`, and the tables barrel no longer re-exports tables that were
+  skipped for lacking a primary key or having a composite column.
+
 ## 2.1.0
 
 ### Minor Changes
